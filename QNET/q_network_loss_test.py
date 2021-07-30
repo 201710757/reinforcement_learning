@@ -17,19 +17,21 @@ def one_hot(x):
 class QNet(nn.Module):
     def __init__(self):
         super(QNet, self).__init__()
-        self.input_layer = nn.Linear(input_size, output_size)
+        self.layer = nn.Sequential(
+            nn.Linear(input_size, output_size)
+        )
     def forward(self, x):
-        x = self.input_layer(x)
+        x = self.layer(x)
         return x
-model = QNet().cuda()
-optimizer = optim.Adam(model.parameters(), lr=0.01)
+model = QNet() 
+optimizer = optim.Adam(model.parameters(), lr=0.1)
 
-criterion = nn.MSELoss()
+loss_func = nn.MSELoss()
 
 # s = env.reset()
 # Q = np.zeros([env.observation_space.n, env.action_space.n])
 
-num_episodes = 10000
+num_episodes = 2000
 rList = []
 
 g = 0.99
@@ -44,7 +46,7 @@ for i in range(num_episodes):
     while not done:
         # greedy act
         optimizer.zero_grad()
-        x_qs = Variable(one_hot(state)).cuda()
+        x_qs = Variable(one_hot(state)) 
         Qs = model.forward(x_qs)
         #print("QS : {}".format(Qs))
         
@@ -57,14 +59,15 @@ for i in range(num_episodes):
         if done:
             Qs[action] = reward
         else:
-            x_qs1 = Variable(one_hot(new_state)).cuda()
+            x_qs1 = Variable(one_hot(new_state)) 
             Qs1 = model.forward(x_qs1)
             #print("QS1 {}".format(Qs1.argmax()))
             Qs[action] = reward + g*Qs1.max()
+            # print(g*Qs1.max())
         
         # Update Q value
-        x_loss = Variable(one_hot(state)).cuda()
-        loss = criterion(Qs, model.forward(x_loss))
+        x_loss = Variable(one_hot(state)) 
+        loss = loss_func(Qs, model.forward(x_loss))
         loss.backward()
         optimizer.step()
 
