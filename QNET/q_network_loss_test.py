@@ -18,12 +18,17 @@ class QNet(nn.Module):
     def __init__(self):
         super(QNet, self).__init__()
         self.layer = nn.Sequential(
-            nn.Linear(input_size, output_size)
+            nn.Linear(input_size, 64),
+            nn.ReLU(),
+            nn.Linear(64, 128),
+            nn.ReLU(),
+            nn.Linear(128, output_size)
         )
     def forward(self, x):
         x = self.layer(x)
         return x
-model = QNet() 
+
+model = QNet().cuda()
 optimizer = optim.Adam(model.parameters(), lr=0.1)
 
 loss_func = nn.MSELoss()
@@ -31,24 +36,24 @@ loss_func = nn.MSELoss()
 # s = env.reset()
 # Q = np.zeros([env.observation_space.n, env.action_space.n])
 
-num_episodes = 2000
+num_episodes = 10000
 rList = []
 
-g = 0.99
+g = 0.98
 
 for i in range(num_episodes):
     state = env.reset()
     rAll = 0
     done = False
     
-    e = 1. / ((i / 50) + 10)
+    e = max(0.01, 0.08 - 0.01*(i/200))
     
     while not done:
         # greedy act
-        optimizer.zero_grad()
-        x_qs = Variable(one_hot(state)) 
-        Qs = model.forward(x_qs)
-        #print("QS : {}".format(Qs))
+        state = torch.tensor(state)
+        x_qs = Variable(F.one_hot(state, num_classes=env.observation_space.n)).cuda()
+        Qs = model.forward(x_qs.float())
+        # print("QS : {}".format(Qs))
         
         if np.random.rand(1) < e:
             action = env.action_space.sample()
@@ -56,18 +61,21 @@ for i in range(num_episodes):
             action = int(Qs.argmax())
         #print(action)
         new_state, reward, done, info = env.step(action)
+        new_state = torch.tensor(state)
         if done:
             Qs[action] = reward
         else:
-            x_qs1 = Variable(one_hot(new_state)) 
-            Qs1 = model.forward(x_qs1)
+            x_qs1 = Variable(F.one_hot(new_state, num_classes=env.observation_space.n)).cuda()
+            Qs1 = model.forward(x_qs1.float())
             #print("QS1 {}".format(Qs1.argmax()))
             Qs[action] = reward + g*Qs1.max()
             # print(g*Qs1.max())
         
         # Update Q value
-        x_loss = Variable(one_hot(state)) 
-        loss = loss_func(Qs, model.forward(x_loss))
+        x_loss = Variable(F.one_hot(state, num_classes=env.observation_space.n)).cuda()
+        loss = loss_func(model.forward(x_loss.float()), Qs)
+        
+        optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
