@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from torch.autograd import Variable
 
 env = gym.make('FrozenLake-v0')
 input_size = env.observation_space.n
@@ -20,7 +21,7 @@ class QNet(nn.Module):
     def forward(self, x):
         x = self.input_layer(x)
         return x
-model = QNet()
+model = QNet().cuda()
 optimizer = optim.Adam(model.parameters(), lr=0.01)
 
 criterion = nn.MSELoss()
@@ -43,7 +44,8 @@ for i in range(num_episodes):
     while not done:
         # greedy act
         optimizer.zero_grad()
-        Qs = model.forward(one_hot(state))
+        x_qs = Variable(one_hot(state)).cuda()
+        Qs = model.forward(x_qs)
         #print("QS : {}".format(Qs))
         
         if np.random.rand(1) < e:
@@ -55,12 +57,14 @@ for i in range(num_episodes):
         if done:
             Qs[action] = reward
         else:
-            Qs1 = model.forward(one_hot(new_state))
+            x_qs1 = Variable(one_hot(state)).cuda()
+            Qs1 = model.forward(x_qs1)
             #print("QS1 {}".format(Qs1.argmax()))
             Qs[action] = reward + g*Qs1.max()
         
         # Update Q value
-        loss = criterion(Qs, model.forward(one_hot(state)))
+        x_loss = Variable(one_hot(state)).cuda()
+        loss = criterion(Qs, model.forward(x_loss))
         loss.backward()
         optimizer.step()
 
