@@ -36,7 +36,7 @@ loss_func = nn.MSELoss()
 # s = env.reset()
 # Q = np.zeros([env.observation_space.n, env.action_space.n])
 
-num_episodes = 10000
+num_episodes = 2000
 rList = []
 
 g = 0.98
@@ -61,7 +61,7 @@ for i in range(num_episodes):
             action = int(Qs.argmax())
         #print(action)
         new_state, reward, done, info = env.step(action)
-        new_state = torch.tensor(state)
+        new_state = torch.tensor(new_state)
         if done:
             Qs[action] = reward
         else:
@@ -73,7 +73,7 @@ for i in range(num_episodes):
         
         # Update Q value
         x_loss = Variable(F.one_hot(state, num_classes=env.observation_space.n)).cuda()
-        loss = loss_func(model.forward(x_loss.float()), Qs)
+        loss = loss_func(model.forward(x_qs.float()), Qs)
         
         optimizer.zero_grad()
         loss.backward()

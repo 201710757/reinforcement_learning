@@ -6,13 +6,11 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 env = gym.make('CartPole-v1')
 input_size = env.observation_space.shape[0]
 output_size = env.action_space.n
 
-def one_hot(x):
-    return torch.from_numpy((np.identity(16)[x:x + 1])[0]).float()
-    
 
 class QNet(nn.Module):
     def __init__(self):
@@ -25,10 +23,11 @@ class QNet(nn.Module):
             nn.Linear(128, output_size)
         )
     def forward(self, x):
+        x = x.to(device)
         x = self.layer(x)
         return x
 
-model = QNet()
+model = QNet().to(device)
 optimizer = optim.Adam(model.parameters(), lr=0.1)
 
 loss_func = nn.MSELoss()
@@ -51,7 +50,7 @@ for i in range(num_episodes):
     while not done:
         # greedy act
         state = torch.tensor(state)
-        x_qs = Variable(state)
+        x_qs = Variable(state).to(device)
         Qs = model.forward(x_qs.float())
         # print("QS : {}".format(Qs))
         
@@ -61,19 +60,18 @@ for i in range(num_episodes):
             action = int(Qs.argmax())
         #print(action)
         new_state, reward, done, info = env.step(action)
-        new_state = torch.tensor(state)
+        new_state = torch.tensor(new_state)
         if done:
             Qs[action] = -100
         else:
-            x_qs1 = Variable(new_state)
+            x_qs1 = Variable(new_state).to(device)
             Qs1 = model.forward(x_qs1.float())
             #print("QS1 {}".format(Qs1.argmax()))
             Qs[action] = reward + g*Qs1.max()
             # print(g*Qs1.max())
         
         # Update Q value
-        x_loss = Variable(state)
-        loss = loss_func(model.forward(x_loss.float()), Qs)
+        loss = loss_func(state, Qs)
         
         optimizer.zero_grad()
         loss.backward()
