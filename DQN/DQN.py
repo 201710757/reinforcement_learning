@@ -10,9 +10,7 @@ class DQN(nn.Module):
     def __init__(self, inputs, outputs):
         super(DQN, self).__init__()
         self.layer1 = nn.Linear(inputs, 16)
-        self.bn1 = nn.BatchNorm1d(16)
         self.layer2 = nn.Linear(16, 64)
-        self.bn2 = nn.BatchNorm1d(64)
         # self.conv1 = nn.Conv2d(3, 16, kernel_size=5, stride=2)
         # self.bn1 = nn.BatchNorm2d(16)
         # self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
@@ -29,15 +27,14 @@ class DQN(nn.Module):
         self.head = nn.Linear(64, outputs)
 
     def forward(self, x):
-        print(x)
-        _x = x.type('torch.DoubleTensor')
-        print(_x)
         x = x.to(device)
-        x = F.relu(self.bn1(self.layer1(x)))
-        x = F.relu(self.bn2(self.layer2(x)))
+        x = F.relu(self.layer1(x))
+        x = F.relu(self.layer2(x))
         return self.head(x)
 
     def predict(self, state):
-        state = torch.tensor(state, dtype=torch.double)
+        #state = torch.tensor(state, dtype=torch.double)
         # state = torch.from_numpy(state, dtype=torch.double)
-        return self.forward(state)
+        state = torch.tensor(state).float()
+        # state = torch.tensor(state, dtype=torch.float32)
+        return self.forward(state).argmax()

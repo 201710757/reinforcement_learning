@@ -85,15 +85,52 @@ def optimize_model():
     transitions = memory.sample(BATCH_SIZE)
     batch = Transition(*zip(*transitions))
 
-    state_batch = torch.cat(batch.state)
-    action_batch = torch.cat(batch.action)
-    reward_batch = torch.cat(batch.reward)
-    next_state_batch = torch.cat(batch.next_state)
-    done_batch = torch.cat(batch.done)
 
+    state_batch = torch.from_numpy(np.stack([x for x in batch.state])).float().to(device)
+    action_batch = torch.from_numpy(np.vstack([x for x in batch.action])).long().to(device)
+    reward_batch = torch.from_numpy(np.vstack([x for x in batch.reward])).float().to(device)
+    next_state_batch = torch.from_numpy(np.stack([x for x in batch.next_state])).float().to(device)
+    done_batch = torch.from_numpy(np.vstack([x for x in batch.done]).astype(np.int8)).float().to(device)
+
+
+    q_out = policy_net(state_batch)
+    q_a = q_out.gather(1, action_batch)
+    max_q_p = target_net(next_state_batch).max(1)[0].unsqueeze(1)
+    target = reward_batch + GAMMA*max_q_p*done_batch
+    
+    criterion = nn.SmoothL1Loss()
+    loss = criterion(q_a, target)
+    optimizer.zero_grad()
+    loss.backward()
+    for param in policy_net.parameters():
+        param.grad.data.clamp_(-1, 1)
+    optimizer.step()
+
+
+    '''
+    state_batch = torch.stack([x for x in batch.state])
+    action_batch = torch.stack(batch.action)
+    reward_batch = torch.stack([torch.tensor(x).to(device) for x in batch.reward])
+    next_state_batch = torch.stack([x for x in batch.next_state])
+    done_batch = torch.stack([torch.tensor(x).to(device) for x in batch.done])
+
+    print(state_batch.shape, action_batch.shape, reward_batch.shape, next_state_batch.shape, done_batch.shape)
+
+
+
+    batch = Transition(*zip(*transitions))
+    state_batch = np.vstack(batch.state)
+    action_batch = np.vstack(batch.action)
+    reward_batch = np.vstack(batch.reward)
+    next_state_batch = np.vstack(batch.next_state)
+    done_batch = np.vstack(batch.done)
+    '''
+
+'''
     X = state_batch
-    Q_target = reward_batch + GAMMA * np.max(target_net.predict(next_state_batch), axis=1)*~done_batch
+    Q_target = reward_batch + GAMMA * target_net.predict(next_state_batch)#*~done_batch
     y = policy_net.predict(state_batch)
+    print(y)
     y[np.arange(len(state_batch)), action_batch] = Q_target
 
 
@@ -105,9 +142,9 @@ def optimize_model():
     for param in policy_net.parameters():
         param.grad.data.clamp_(-1, 1)
     optimizer.step()
+'''
 
-
-num_episodes = 50
+num_episodes = 1000
 for i_episodes in range(num_episodes):
     state = env.reset()
 
@@ -119,13 +156,15 @@ for i_episodes in range(num_episodes):
             with torch.no_grad():
                 action = policy_net.predict(state)
         else:
-            action = env.action_space.sample()
+            action = torch.tensor(env.action_space.sample(), device=device)
+            # action = env.action_space.sample()
 
-        n_s, r, d, _ = env.step(action)
+        # action = np.argmax(action)
+        n_s, r, d, _ = env.step(action.item())
         
         if d:
             r = -1
-        memory.push(state, action, r, n_s, d)
+        memory.push(state, action.cpu(), r, n_s, d)
         state = n_s
         
         optimize_model()
@@ -135,7 +174,7 @@ for i_episodes in range(num_episodes):
     if i_episodes % TARGET_UPDATE == 0:
         target_net.load_state_dict(policy_net.state_dict())
 
-def bot_play(agent) -> None:
+def bot_play(agent):
     """Runs a single episode with rendering and prints a reward
     Args:
         mainDQN (dqn.DQN): DQN Agent
@@ -145,8 +184,8 @@ def bot_play(agent) -> None:
 
     while True:
         env.render()
-        action = np.argmax(agent.predict(state))
-        state, reward, done, _ = env.step(action)
+        action = agent.predict(state)
+        state, reward, done, _ = env.step(action.item())
         total_reward += reward
         if done:
             print("Total score: {}".format(total_reward))
