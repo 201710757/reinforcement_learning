@@ -1,4 +1,3 @@
-from _typeshed import Self
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -8,7 +7,7 @@ import numpy as np
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class DQN(nn.Module):
-    def __inti__(self, inputs, outputs):
+    def __init__(self, inputs, outputs):
         super(DQN, self).__init__()
         self.layer1 = nn.Linear(inputs, 16)
         self.bn1 = nn.BatchNorm1d(16)
@@ -30,8 +29,15 @@ class DQN(nn.Module):
         self.head = nn.Linear(64, outputs)
 
     def forward(self, x):
+        print(x)
+        _x = x.type('torch.DoubleTensor')
+        print(_x)
         x = x.to(device)
         x = F.relu(self.bn1(self.layer1(x)))
         x = F.relu(self.bn2(self.layer2(x)))
         return self.head(x)
 
+    def predict(self, state):
+        state = torch.tensor(state, dtype=torch.double)
+        # state = torch.from_numpy(state, dtype=torch.double)
+        return self.forward(state)
