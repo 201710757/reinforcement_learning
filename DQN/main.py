@@ -28,7 +28,7 @@ GAMMA = 0.999
 EPS_START = 0.9
 EPS_END = 0.05
 EPS_DECAY = 200
-TARGET_UPDATE = 10
+TARGET_UPDATE = 2000
 
 env = gym.make('CartPole-v1')
 n_actions = env.action_space.n
@@ -144,7 +144,7 @@ def optimize_model():
     optimizer.step()
 '''
 
-num_episodes = 1000
+num_episodes = 20000
 for i_episodes in range(num_episodes):
     state = env.reset()
 
