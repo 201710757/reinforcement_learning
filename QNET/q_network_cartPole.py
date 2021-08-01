@@ -71,7 +71,7 @@ for i in range(num_episodes):
             # print(g*Qs1.max())
         
         # Update Q value
-        loss = loss_func(state, Qs)
+        loss = loss_func(model.forward(x_qs), Qs)
         
         optimizer.zero_grad()
         loss.backward()
