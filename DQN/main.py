@@ -41,7 +41,8 @@ target_net.load_state_dict(policy_net.state_dict())
 target_net.eval()
 
 optimizer = optim.RMSprop(policy_net.parameters())
-memory = ReplayMemory(10000)
+REPLAY_MEMORY = 10000
+memory = ReplayMemory(REPLAY_MEMORY)
 
 steps_done = 0
 
@@ -56,28 +57,6 @@ def select_action(state):
             return policy_net.predict(state)
     else:
         return torch.tensor([[random.randrange(n_actions)]], device=device, dtype=torch.long)
-
-episode_durations = []
-
-def plot_durations():
-    plt.figure(2)
-    plt.clf()
-    durations_t = torch.tensor(episode_durations, dtype=torch.float)
-    plt.title('Training...')
-    plt.xlabel('Episode')
-    plt.ylabel('Duration')
-    plt.plot(durations_t.numpy())
-    # 100개의 에피소드 평균을 가져 와서 도표 그리기
-    if len(durations_t) >= 100:
-        means = durations_t.unfold(0, 100, 1).mean(1).view(-1)
-        means = torch.cat((torch.zeros(99), means))
-        plt.plot(means.numpy())
-
-    plt.pause(0.001)  # 도표가 업데이트되도록 잠시 멈춤
-    if is_ipython:
-        display.clear_output(wait=True)
-        display.display(plt.gcf())
-
 
 def optimize_model():
     if len(memory) < BATCH_SIZE:
@@ -165,6 +144,8 @@ for i_episodes in range(num_episodes):
         if d:
             r = -1
         memory.push(state, action.cpu(), r, n_s, d)
+        if len(memory) > REPLAY_MEMORY:
+            memory.popleft()
         state = n_s
         
         optimize_model()
