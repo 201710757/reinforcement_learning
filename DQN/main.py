@@ -151,7 +151,8 @@ for i_episodes in range(num_episodes):
         optimize_model()
         if d:
             break
-    
+    if i_episodes % 1000 == 0:
+        print("EPS {} ".format(i_episodes))
     if i_episodes % TARGET_UPDATE == 0:
         target_net.load_state_dict(policy_net.state_dict())
 
