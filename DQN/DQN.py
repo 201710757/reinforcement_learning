@@ -9,10 +9,13 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 class DQN(nn.Module):
     def __init__(self, inputs, outputs):
         super(DQN, self).__init__()
-        self.layer1 = nn.Linear(inputs, 16)
-        self.layer2 = nn.Linear(16, 64)
+        self.layer1 = nn.Linear(inputs, 128)
+        self.layer2 = nn.Linear(128, 256)
+        self.layer3 = nn.Linear(256, 64)
         # self.conv1 = nn.Conv2d(3, 16, kernel_size=5, stride=2)
-        # self.bn1 = nn.BatchNorm2d(16)
+        self.bn1 = nn.BatchNorm1d(128)
+        self.bn2 = nn.BatchNorm1d(256)
+        self.bn3 = nn.BatchNorm1d(64)
         # self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
         # self.bn2 = nn.BatchNorm2d(32)
         # self.conv3 = nn.Conv2d(32, 32, kernel_size=5, stride=2)
@@ -28,8 +31,9 @@ class DQN(nn.Module):
 
     def forward(self, x):
         x = x.to(device)
-        x = F.relu(self.layer1(x))
-        x = F.relu(self.layer2(x))
+        x = F.relu(self.bn1(self.layer1(x)))
+        x = F.relu(self.bn2(self.layer2(x)))
+        x = F.relu(self.bn3(self.layer3(x)))
         return self.head(x)
 
     def predict(self, state):
