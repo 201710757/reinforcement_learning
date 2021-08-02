@@ -31,9 +31,9 @@ class DQN(nn.Module):
 
     def forward(self, x):
         x = x.to(device)
-        x = F.relu(self.bn1(self.layer1(x)))
-        x = F.relu(self.bn2(self.layer2(x)))
-        x = F.relu(self.bn3(self.layer3(x)))
+        x = F.relu(self.layer1(x))
+        x = F.relu(self.layer2(x))
+        x = F.relu(self.layer3(x))
         return self.head(x)
 
     def predict(self, state):
