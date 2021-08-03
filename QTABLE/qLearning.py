@@ -26,7 +26,9 @@ for ep in range(episodes):
         a = pick_action(Q_table[obs,:])
         n_obs, reward, done, info = env.step(a)
 
-        Q_table[obs, a] = (1-LR)*(Q_table[obs, a]) +  LR*(reward + GAMMA * np.max(Q_table[n_obs, :]))
+        # Q_table[obs, a] = (1-LR)*(Q_table[obs, a]) +  LR*(reward + GAMMA * np.max(Q_table[n_obs, :]))
+        Q_table[obs, a] = Q_table[obs, a] + LR*(reward + np.max(Q_table[n_obs, :]) - Q_table[obs, a])
+
         obs = n_obs
         success += reward
         if done:
