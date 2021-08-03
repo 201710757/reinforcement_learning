@@ -143,7 +143,7 @@ for i_episodes in range(num_episodes):
         
         if d:
             r = -1
-        memory.push(state, action.cpu(), r, n_s, d)
+        memory.push(state, action, r, n_s, d)
         if len(memory) > REPLAY_MEMORY:
             memory.popleft()
         state = n_s
