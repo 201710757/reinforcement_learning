@@ -1,6 +1,9 @@
 import gym
 import numpy as np
 import random
+import torch
+
+device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 exploration_rate = 1
 max_exploration_rate = 1
@@ -13,7 +16,9 @@ env = gym.make('FrozenLake-v0')
 ACTION_SPACE = env.action_space.n
 OBSERVATION_SPACE = env.observation_space.n
 
-Q_table = np.zeros([OBSERVATION_SPACE, ACTION_SPACE])
+# Q_table = np.zeros([OBSERVATION_SPACE, ACTION_SPACE])
+arr = np.zeros([OBSERVATION_SPACE, ACTION_SPACE])
+Q_table = torch.tensor(arr, device=device)
 def pick_action(state):
     if state.var() == 0:
         return int(random.randrange(0, env.action_space.n))
