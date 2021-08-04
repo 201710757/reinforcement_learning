@@ -48,14 +48,14 @@ for ep in range(episodes):
         n_obs = np.eye(OBSERVATION_SPACE)[n_obs]
 
         if done:
-            Q[a] = torch.tensor(reward).float().to(device)
+            Q[a] = torch.tensor(reward)
         else:
             with torch.no_grad():
                 Q_next_state_value = model(torch.tensor(n_obs).float())
             Q[a] = torch.tensor(reward + GAMMA * torch.max(Q_next_state_value).to(device).item())
 
         criterion = nn.MSELoss()
-        loss = criterion(Q, Q_next_state_value)
+        loss = criterion(model(torch.tensor(obs).float()), Q)
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
@@ -65,7 +65,7 @@ for ep in range(episodes):
 
         if done:
             break
-    if ep % 10000 == 0:
-        print("middle score : {}%".format((success / (ep+1))*100))
+    if ep % 500 == 0:
+        print("ep : {} / middle score : {}%".format(ep, (success / (ep+1))*100))
     
 print("Total score : {}%".format((success / episodes)*100))
