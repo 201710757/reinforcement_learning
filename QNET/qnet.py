@@ -52,7 +52,7 @@ for ep in range(episodes):
         else:
             with torch.no_grad():
                 Q_next_state_value = model(torch.tensor(n_obs).float())
-            Q[a] = torch.tensor(reward + GAMMA * torch.max(Q_next_state_value).to(device).item())
+            Q[a] = torch.tensor(reward + GAMMA * torch.max(Q_next_state_value).to(device).item()).to(device)
 
         criterion = nn.MSELoss()
         loss = criterion(model(torch.tensor(obs).float()), Q)
