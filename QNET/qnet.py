@@ -20,11 +20,12 @@ ACTION_SPACE = env.action_space.n
 OBSERVATION_SPACE = env.observation_space.n
 
 model = qnet(OBSERVATION_SPACE, ACTION_SPACE).to(device)
-criterion = nn.MSELoss()
+model.eval()
+
 optimizer = optim.SGD(model.parameters(), lr=LR)
 
 def pick_action(state):
-    return torch.argmax(state).to(device).item()
+    return torch.argmax(state).item()
 
 
 r_list = []
@@ -38,7 +39,7 @@ for ep in range(episodes):
 
     while True:
         exploration = random.uniform(0, 1)
-        Q = model(torch.tensor(obs))
+        Q = model(torch.tensor(obs).float())
         if exploration > exploration_rate:
             a = pick_action(Q)
         else:
@@ -47,12 +48,13 @@ for ep in range(episodes):
         n_obs = np.eye(OBSERVATION_SPACE)[n_obs]
 
         if done:
-            Q[a] = torch.tensor(reward).to(device)
+            Q[a] = torch.tensor(reward).float().to(device)
         else:
-            Q_next_state_value = model(torch.tensor(n_obs))
+            with torch.no_grad():
+                Q_next_state_value = model(torch.tensor(n_obs).float())
             Q[a] = torch.tensor(reward + GAMMA * torch.max(Q_next_state_value).to(device).item())
 
-        
+        criterion = nn.MSELoss()
         loss = criterion(Q, Q_next_state_value)
         optimizer.zero_grad()
         loss.backward()
