@@ -18,12 +18,12 @@ OBSERVATION_SPACE = env.observation_space.n
 
 # Q_table = np.zeros([OBSERVATION_SPACE, ACTION_SPACE])
 arr = np.zeros([OBSERVATION_SPACE, ACTION_SPACE])
-Q_table = torch.tensor(arr, device=device)
+Q_table = torch.tensor(arr).to(device)
 def pick_action(state):
     if state.var() == 0:
         return int(random.randrange(0, env.action_space.n))
     else:
-        return np.argmax(state)
+        return torch.argmax(state).to(device).item()
 
 
 r_list = []
@@ -42,7 +42,7 @@ for ep in range(episodes):
             a = env.action_space.sample()
         n_obs, reward, done, info = env.step(a)
 
-        Q_table[obs, a] = (1-LR)*(Q_table[obs, a]) +  LR*(reward + GAMMA * np.max(Q_table[n_obs, :]))
+        Q_table[obs, a] = torch.tensor((1-LR)*(Q_table[obs, a]) +  LR*(reward + GAMMA * torch.max(Q_table[n_obs, :]).to(device).item())).to(device)
         # Q_table[obs, a] = Q_table[obs, a] + LR*(reward + np.max(Q_table[n_obs, :]) - Q_table[obs, a])
 
         obs = n_obs
