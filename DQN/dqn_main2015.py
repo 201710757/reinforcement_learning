@@ -37,8 +37,8 @@ def pick_action(state):
 
 
 def train_minibatch(minibatch):
-    x_batch = torch.tensor([])
-    y_batch = torch.tensor([])
+    x_batch = torch.tensor([]).to(device)
+    y_batch = torch.tensor([]).to(device)
     for state, action, reward, next_state, done in minibatch:
         state = torch.tensor(state).float()
         next_state = torch.tensor(next_state).float()
