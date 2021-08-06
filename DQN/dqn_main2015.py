@@ -15,10 +15,10 @@ min_exploration_rate = 0.01
 exploration_decay_rate = 0.01
 
 GAMMA = 0.99
-LR = 0.001
-REPLAY_MEMORY = 50000
-BATCH_SIZE = 64
-TARGET_UPDATE_FREQUENCY = 5
+LR = 0.01
+REPLAY_MEMORY = 10000
+BATCH_SIZE = 128
+TARGET_UPDATE_FREQUENCY = 10
 
 env = gym.make('CartPole-v0')
 ACTION_SPACE = env.action_space.n
@@ -37,25 +37,63 @@ def pick_action(state):
 
 
 def train_minibatch(minibatch):
-    state_arr = torch.cat([torch.tensor([x[0]]).float() for x in minibatch])
-    action_arr = torch.cat([torch.tensor([x[1]]) for x in minibatch])
-    reward_arr = torch.cat([torch.tensor([x[2]]) for x in minibatch])
-    next_state_arr = torch.cat([torch.tensor([x[3]]).float() for x in minibatch])
-    done_arr = torch.cat([torch.tensor([~x[4]]) for x in minibatch])
+    x_batch = torch.tensor([])
+    y_batch = torch.tensor([])
+    for state, action, reward, next_state, done in minibatch:
+        state = torch.tensor(state).float()
+        next_state = torch.tensor(next_state).float()
+        Q = main_model(state)
 
-    x_batch = main_model(state_arr)
-    y_batch = target_model(state_arr)
-
-    with torch.no_grad():
-        next_state_value = target_model(next_state_arr)
-    Q_target = torch.tensor(reward_arr + GAMMA * torch.max(next_state_value).to(device).item()).to(device)
-    y_batch[np.arange(len(x_batch)), action_arr] = Q_target
+        if done:
+            Q[action] = torch.tensor(reward).to(device)
+        else:
+            with torch.no_grad():
+                next_state_value = target_model(next_state)
+            Q[action] = torch.tensor(reward + GAMMA * torch.max(next_state_value).to(device).item()).to(device)
+        y_batch = torch.cat([y_batch,Q])
+        x_batch = torch.cat([x_batch, main_model(state)])
 
     criterion = nn.MSELoss()
     loss = criterion(x_batch, y_batch)
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
+
+    # state_arr = torch.cat([torch.tensor([x[0]]).float() for x in minibatch])
+    # action_arr = torch.cat([torch.tensor([x[1]]) for x in minibatch])
+    # reward_arr = torch.cat([torch.tensor([x[2]]) for x in minibatch])
+    # next_state_arr = torch.cat([torch.tensor([x[3]]).float() for x in minibatch])
+    # # done_arr = torch.cat([torch.tensor([x[4]]) for x in minibatch])
+    # done_arr = torch.tensor([torch.tensor([x[4]]) for x in minibatch])
+    # Q = target_model(state_arr)
+    
+    # with torch.no_grad():
+    #     next_state_value = target_model(next_state_arr)
+    # Q[np.arange(len(Q)), action_arr] = torch.tensor((reward_arr + GAMMA * torch.max(next_state_value).to(device).item())* torch.tensor(done_arr != True)).to(device)\
+    #      + (torch.tensor(done_arr == True) * torch.tensor(reward_arr)).to(device)
+    # x = main_model(state_arr)
+
+    # criterion = nn.MSELoss()
+    # loss = criterion(x, Q)
+    # optimizer.zero_grad()
+    # loss.backward()
+    # optimizer.step()
+
+
+
+    # x_batch = main_model(state_arr)
+    # y_batch = target_model(state_arr)
+
+    # with torch.no_grad():
+    #     next_state_value = target_model(next_state_arr)
+    # Q_target = torch.tensor(reward_arr + GAMMA * torch.max(next_state_value).to(device).item()).to(device)
+    # y_batch[np.arange(len(x_batch)), action_arr] = Q_target
+
+    # criterion = nn.MSELoss()
+    # loss = criterion(y_batch, x_batch)
+    # optimizer.zero_grad()
+    # loss.backward()
+    # optimizer.step()
 
 
 
@@ -80,7 +118,7 @@ for ep in range(episodes):
 
         n_obs, reward, done, info = env.step(a)
         if done:
-            reward = -1
+            reward = -100
         replay_buffer.push(obs, a, reward, n_obs, done)
         obs = n_obs
 
