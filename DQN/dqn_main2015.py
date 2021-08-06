@@ -44,11 +44,11 @@ def train_minibatch(minibatch):
     done_arr = torch.cat([torch.tensor([~x[4]]) for x in minibatch])
 
     x_batch = main_model(state_arr)
-    y_batch = main_model(state_arr)
+    y_batch = target_model(state_arr)
 
     with torch.no_grad():
         next_state_value = target_model(next_state_arr)
-    Q_target = torch.tensor(reward_arr + done_arr * GAMMA * torch.max(next_state_value).to(device).item()).to(device)
+    Q_target = torch.tensor(reward_arr + GAMMA * torch.max(next_state_value).to(device).item()).to(device)
     y_batch[np.arange(len(x_batch)), action_arr] = Q_target
 
     criterion = nn.MSELoss()
