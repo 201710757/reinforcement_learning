@@ -47,11 +47,11 @@ def train_minibatch(minibatch):
             Q = main_model(state)
 
             if done:
-                Q[action] = torch.tensor(reward).to(device)
+                Q[action] = torch.tensor(reward)#.to(device) is needed?
             else:
                 with torch.no_grad():
                     next_state_value = target_model(next_state)
-                Q[action] = torch.tensor(reward + GAMMA * torch.max(next_state_value).to(device).item()).to(device)
+                Q[action] = torch.tensor(reward + GAMMA * torch.max(next_state_value).item())#.to(device) is needed?
             y_batch = torch.cat([y_batch,Q])
             x_batch = torch.cat([x_batch, main_model(state)])
 
