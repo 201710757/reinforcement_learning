@@ -1,3 +1,4 @@
+from collections import deque
 import random
 from tensorflow.keras import layers
 from tensorflow import keras
@@ -16,7 +17,8 @@ class DQN:
         self.epsilon = 1.0
         self.epsilon_min = 0.01
         self.epsilon_decay = 0.995
-        
+
+        self.memory = deque(maxlen=2000)
         self.model = self.create_model()
 
 #    def call(self):
@@ -41,3 +43,22 @@ class DQN:
         if np.random.random() < self.epsilon:
             return random.randrange(0, self.output_size)
         return np.argmax(self.model.predict(state)[0])
+    
+    # not use
+    def remember(self, s, a, r, ns, d):
+        self.memory.append((s,a,r,ns,d))
+
+    # not use
+    def replay(self, sample_batch_size):
+        if len(self.memory) < sample_batch_size:
+            return
+        sample_batch = random.sample(self.memory, sample_batch_size)
+
+        for s, a, r, ns, d in sample_batch:
+            target = r
+            if not d:
+                target = r + self.gamma*np.amax(self.model.predict(ns)[0])
+            target_f = self.model.predict(s)
+            target_f[0][a] = target
+            self.model.fit(s, target_f, epochs=1, verbose=0)
+        
