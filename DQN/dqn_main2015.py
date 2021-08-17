@@ -6,8 +6,13 @@ import torch.optim as optim
 import random
 from DQN import qnet
 from ReplayMemory import ReplayMemory
+import math 
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
+# EPS_START = 0.9
+# EPS_END = 0.05
+# EPS_DECAY = 200
 
 exploration_rate = 1
 max_exploration_rate = 1
@@ -18,9 +23,9 @@ GAMMA = 0.99
 LR = 0.01
 REPLAY_MEMORY = 10000
 BATCH_SIZE = 128
-TARGET_UPDATE_FREQUENCY = 10
+TARGET_UPDATE_FREQUENCY = 20
 
-env = gym.make('CartPole-v0')
+env = gym.make('CartPole-v1')
 ACTION_SPACE = env.action_space.n
 OBSERVATION_SPACE = env.observation_space.shape[0]
 
@@ -32,104 +37,47 @@ target_model.eval()
 
 optimizer = optim.Adam(main_model.parameters(), lr=LR)
 
+
+def train_minibatch(minibatch):
+    state_arr = torch.cat([torch.tensor([x[0]]).float() for x in minibatch])
+    action_arr = torch.cat([torch.tensor([x[1]]) for x in minibatch])
+    reward_arr = torch.cat([torch.tensor([x[2]]) for x in minibatch]).to(device)
+    next_state_arr = torch.cat([torch.tensor([x[3]]).float() for x in minibatch])
+    done_arr = torch.cat([torch.tensor([x[4]]) for x in minibatch]).to(device)
+
+    Q = main_model(state_arr)
+    with torch.no_grad():
+        next_state_value = target_model(next_state_arr)
+    
+    Q[np.arange(len(Q)), action_arr] = torch.tensor(reward_arr + GAMMA * next_state_value.max(1)[0] * (done_arr != True)).to(device)\
+        + torch.tensor((done_arr == True) * reward_arr).to(device)
+    x_batch = main_model(state_arr)
+
+    criterion = nn.MSELoss()
+    loss = criterion(x_batch, Q)
+    optimizer.zero_grad()
+    loss.backward()
+    optimizer.step()
+
 def pick_action(state):
     return torch.argmax(state).item()
 
-
-def train_minibatch(minibatch):
-    version_flag = 1
-    if version_flag == 1:
-        x_batch = torch.tensor([]).to(device)
-        y_batch = torch.tensor([]).to(device)
-        for state, action, reward, next_state, done in minibatch:
-            state = torch.tensor(state).float()
-            next_state = torch.tensor(next_state).float()
-            Q = main_model(state)
-
-            if done:
-                Q[action] = torch.tensor(reward)#.to(device) is needed?
-            else:
-                with torch.no_grad():
-                    next_state_value = target_model(next_state)
-                Q[action] = torch.tensor(reward + GAMMA * torch.max(next_state_value).item())#.to(device) is needed?
-            y_batch = torch.cat([y_batch,Q])
-            x_batch = torch.cat([x_batch, main_model(state)])
-
-        criterion = nn.MSELoss()
-        loss = criterion(x_batch, y_batch)
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-    elif version_flag == 2:
-        state_arr = torch.cat([torch.tensor([x[0]]).float() for x in minibatch])
-        action_arr = torch.cat([torch.tensor([x[1]]) for x in minibatch])
-        reward_arr = torch.cat([torch.tensor([x[2]]) for x in minibatch])
-        next_state_arr = torch.cat([torch.tensor([x[3]]).float() for x in minibatch])
-        done_arr = torch.cat([torch.tensor([x[4]]) for x in minibatch])
-
-        Q = main_model(state_arr).to(device)
-        with torch.no_grad():
-            next_state_value = target_model(next_state_arr).to(device)
-        Q[np.arange(len(Q)), action_arr] = torch.tensor(reward_arr + GAMMA * torch.max(next_state_value).item() * (done_arr != True)).to(device)\
-            + torch.tensor((done_arr == True) * reward_arr).to(device)
-        x_batch = main_model(state_arr).to(device)
-
-        criterion = nn.MSELoss()
-        loss = criterion(x_batch, Q)
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-        
-    # state_arr = torch.cat([torch.tensor([x[0]]).float() for x in minibatch])
-    # action_arr = torch.cat([torch.tensor([x[1]]) for x in minibatch])
-    # reward_arr = torch.cat([torch.tensor([x[2]]) for x in minibatch])
-    # next_state_arr = torch.cat([torch.tensor([x[3]]).float() for x in minibatch])
-    # # done_arr = torch.cat([torch.tensor([x[4]]) for x in minibatch])
-    # done_arr = torch.tensor([torch.tensor([x[4]]) for x in minibatch])
-    # Q = target_model(state_arr)
-    
-    # with torch.no_grad():
-    #     next_state_value = target_model(next_state_arr)
-    # Q[np.arange(len(Q)), action_arr] = torch.tensor((reward_arr + GAMMA * torch.max(next_state_value).to(device).item())* torch.tensor(done_arr != True)).to(device)\
-    #      + (torch.tensor(done_arr == True) * torch.tensor(reward_arr)).to(device)
-    # x = main_model(state_arr)
-
-    # criterion = nn.MSELoss()
-    # loss = criterion(x, Q)
-    # optimizer.zero_grad()
-    # loss.backward()
-    # optimizer.step()
-
-
-
-    # x_batch = main_model(state_arr)
-    # y_batch = target_model(state_arr)
-
-    # with torch.no_grad():
-    #     next_state_value = target_model(next_state_arr)
-    # Q_target = torch.tensor(reward_arr + GAMMA * torch.max(next_state_value).to(device).item()).to(device)
-    # y_batch[np.arange(len(x_batch)), action_arr] = Q_target
-
-    # criterion = nn.MSELoss()
-    # loss = criterion(y_batch, x_batch)
-    # optimizer.zero_grad()
-    # loss.backward()
-    # optimizer.step()
-
-
-
 cnt_list = []
-episodes = 100000
+episodes = 1000
 replay_buffer = ReplayMemory(REPLAY_MEMORY)
+
+# steps_done = 0
 for ep in range(episodes):
     obs = env.reset()
-    # cartpole doesnt need one hot encoding
-    # obs = np.eye(OBSERVATION_SPACE)[obs]
+
     exploration_rate = min_exploration_rate + (max_exploration_rate - min_exploration_rate) * np.exp(-exploration_decay_rate*ep)
     cnt = 0
 
     while True:
+        sample = random.random()
+        # eps_threshold = EPS_END + (EPS_START - EPS_END) * math.exp(-1. * steps_done / EPS_DECAY)
+        # steps_done += 1
+
         cnt += 1
         exploration = random.uniform(0, 1)
         Q = main_model(torch.tensor(obs).float())
@@ -164,9 +112,11 @@ for ep in range(episodes):
         break
     
 
+reward_sum = 0
 for i in range(10):
-    reward_sum = 0
     obs = env.reset()
+    step_cnt = 0
+
     while True:
         env.render()
 
@@ -174,7 +124,7 @@ for i in range(10):
         action = pick_action(Q)
 
         n_obs, reward, done, _ = env.step(action)
-        reward_sum += reward
+        step_cnt += 1
         if done:
-            print("Total score: {}".format(reward_sum))
+            print("{}th Step : {}".format(i, step_cnt))
             break
