@@ -48,9 +48,12 @@ def train_minibatch(minibatch):
     Q = main_model(state_arr)
     with torch.no_grad():
         next_state_value = target_model(next_state_arr)
+    # n_s_b = torch.zeros(len(Q)).to(device)
+    # n_s_b = (reward_arr + GAMMA * next_state_value.max(1)[0] * (done_arr==False)) + ((done_arr==True) * reward_arr)
     
-    Q[np.arange(len(Q)), action_arr] = torch.tensor(reward_arr + GAMMA * next_state_value.max(1)[0] * (done_arr != True)).to(device)\
-        + torch.tensor((done_arr == True) * reward_arr).to(device)
+    # Q[np.arange(len(Q)), action_arr] = torch.tensor(reward_arr + GAMMA * next_state_value.max(1)[0] * (done_arr != True)).to(device)\
+    #     + torch.tensor((done_arr == True) * reward_arr).to(device)
+    Q[np.arange(len(Q)), action_arr] = torch.tensor((reward_arr + GAMMA * next_state_value.max(1)[0] * (done_arr==False)) + ((done_arr==True) * reward_arr)).to(device)
     x_batch = main_model(state_arr)
 
     criterion = nn.MSELoss()
@@ -63,7 +66,7 @@ def pick_action(state):
     return torch.argmax(state).item()
 
 cnt_list = []
-episodes = 1000
+episodes = 1500
 replay_buffer = ReplayMemory(REPLAY_MEMORY)
 
 # steps_done = 0
