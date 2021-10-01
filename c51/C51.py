@@ -17,7 +17,7 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 V_MIN = -10.
 V_MAX = 10.
-V_RANGE = np.linespace(V_MIN, V_MAX, 51) # why C51
+V_RANGE = np.linespace(V_MIN, V_MAX, 51) # this is why C51
 
 exploration_rate = 1
 max_exploration_rate = 1
