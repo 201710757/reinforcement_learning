@@ -3,6 +3,7 @@ import numpy as np
 import torch.nn.functional as F
 import torch.nn as nn
 from DQN import qnet
+import ReplayMemory
 #import gym
 
 #env = gym.make('CartPole-v1')
@@ -12,11 +13,14 @@ from DQN import qnet
 REPLAY_MEMORY = 10000
 BATCH_SIZE = 128
 LR = 1e-4
+GAMMA = 0.99
 
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
+N_ATOM = 51
 V_MIN = -10.
 V_MAX = 10.
+V_STEP = ((V_MAX-V_MIN)/(N_ATOM-1))
 V_RANGE = np.linespace(V_MIN, V_MAX, 51) # this is why C51
 
 exploration_rate = 1
@@ -95,7 +99,33 @@ class C51(nn.Module):
         q_next = q_next.data.cpu().numpy()
 
         # projection
+        next_v_range = np.expand_dims(b_r, 1) + GAMMA * np.expand_dims((1.0 - b_d), 1) * np.expand_dims(self.value_range.data.cpu().numpy(), 0)
+        next_v_pos = np.zero_like(next_v_range)
+        next_v_range = np.clip(next_v_range, V_MIN, V_MAX)
+        next_v_pos = (next_v_range - V_MIN) / V_STEP
         
+        lb = np.floor(next_v_pos).astype(int)
+        ub = np.cell(next_v_pos).astype(int)
+
+        for i in range(mb_size):
+            for j in range(N_ATOM):
+                # q_target[i, lb[i,j]] += (q_next * (ub - next_v_pos))[i,j]
+                q_target[i, lb[i, j]] += (q_next * (ub - next_v_pos))[i, j]
+                q_target[i, ub[i, j]] += (q_next * (next_v_pos - lb))[i, j]
+        q_target = torch.FloatTensor(q_target)
+        q_target = q_target.to(device)
+
+        loss = q_target * (-torch.log(q_eval + 1e-8))
+        loss = torch.mean(loss)
+        
+        b_w = torch.Tensor(b_w)
+        b_w = b_w.to(device)
+
+        loss = torch.mean(b_w*loss)
+        
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
 
     def update_target(self):
         self.target_net.load_state_dict(self.pred_net.state_dict())
