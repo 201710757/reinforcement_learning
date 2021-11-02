@@ -60,7 +60,7 @@ class C51(nn.Module):
             action_value = torch.sum(action_value_dist * self.value_range.view(1,1,-1), dim=2)
             action = torch.argmax(action_value, dim=1).data.cpu().numpy()
         else:
-            action = np.random.randing(0, self.N_ACTIONS, (x.size(0)))
+            action = np.random.randint(0, self.N_ACTIONS, (x.size(0)))
         return action
 
     def store_transition(self, s, a, r, n_s, done):
@@ -109,7 +109,6 @@ class C51(nn.Module):
 
         for i in range(mb_size):
             for j in range(N_ATOM):
-                # q_target[i, lb[i,j]] += (q_next * (ub - next_v_pos))[i,j]
                 q_target[i, lb[i, j]] += (q_next * (ub - next_v_pos))[i, j]
                 q_target[i, ub[i, j]] += (q_next * (next_v_pos - lb))[i, j]
         q_target = torch.FloatTensor(q_target)
