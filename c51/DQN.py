@@ -6,53 +6,44 @@ import torchvision.transforms as T
 import numpy as np
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-class DQN(nn.Module):
-    def __init__(self, inputs, outputs):
-        super(DQN, self).__init__()
-        self.layer1 = nn.Linear(inputs, 128, bias=True)
-        self.layer2 = nn.Linear(128, 256, bias=True)
-        self.layer3 = nn.Linear(256, 64, bias=True)
-        # self.conv1 = nn.Conv2d(3, 16, kernel_size=5, stride=2)
-        # self.bn1 = nn.BatchNorm1d(128)
-        # self.bn2 = nn.BatchNorm1d(256)
-        # self.bn3 = nn.BatchNorm1d(64)
-        # self.conv2 = nn.Conv2d(16, 32, kernel_size=5, stride=2)
-        # self.bn2 = nn.BatchNorm2d(32)
-        # self.conv3 = nn.Conv2d(32, 32, kernel_size=5, stride=2)
-        # self.bn3 = nn.BatchNorm2d(32)
-
-        # def conv2d_size_out(size, kernel_size=5, stride=2):
-        #     return (size-(kernel_size-1)-1) // stride + 1
-        # convw = conv2d_size_out(conv2d_size_out(conv2d_size_out(w)))
-        # convh = conv2d_size_out(conv2d_size_out(conv2d_size_out(h)))
-        # linear_input_size = convw * convh * 32
-
-        self.head = nn.Linear(64, outputs, bias=True)
-
-    def forward(self, x):
-        x = x.to(device)
-        x = F.relu(self.layer1(x))
-        x = F.relu(self.layer2(x))
-        x = F.relu(self.layer3(x))
-        return self.head(x)
-
-    def predict(self, state):
-        #state = torch.tensor(state, dtype=torch.double)
-        # state = torch.from_numpy(state, dtype=torch.double)
-        state = torch.tensor(state).float()
-        # state = torch.tensor(state, dtype=torch.float32)
-        return self.forward(state).argmax()
 
 class qnet(nn.Module):
     def __init__(self, inputs, outputs):
         super(qnet, self).__init__()
-        self.layer1 = nn.Linear(inputs, 64)
-        self.layer2 = nn.Linear(64, 128)
-        self.layer3 = nn.Linear(128, 32)
-        self.head = nn.Linear(32, outputs)
+        self.feature_extraction = nn.Sequential(
+            nn.Conv2d(4, 32, kernel_size=8, stride=4),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=4, stride=2),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1),
+            nn.ReLU(),
+        )
+        self.fc = nn.Linear(7 * 7 * 64, 512)
+        
+        # action value distribution
+        self.fc_q = nn.Linear(512, 2 * 51) 
+            
+        # Initialization
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                # nn.init.orthogonal_(m.weight, gain = np.sqrt(2))
+                nn.init.xavier_normal_(m.weight)
+                nn.init.constant_(m.bias, 0.0)
+            elif isinstance(m, nn.Linear):
+                nn.init.kaiming_normal_(m.weight)
+                nn.init.constant_(m.bias, 0.0)
+            
+
     def forward(self, x):
-        x = x.to(device)
-        x = F.relu(self.layer1(x))
-        x = F.relu(self.layer2(x))
-        x = F.relu(self.layer3(x))
-        return self.head(x)
+        # x.size(0) : minibatch size
+        mb_size = x.size(0)
+        # x: (m, 84, 84, 4) tensor
+        x = self.feature_extraction(x / 255.0)
+        # x.size(0) : mini-batch size
+        x = x.view(x.size(0), -1)
+        x = F.relu(self.fc(x))
+        
+        # note that output of C-51 is prob mass of value distribution
+        action_value = F.softmax(self.fc_q(x).view(mb_size, 2, 51), dim=2)
+
+        return action_value

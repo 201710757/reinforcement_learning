@@ -3,7 +3,7 @@ import numpy as np
 import torch.nn.functional as F
 import torch.nn as nn
 from DQN import qnet
-import ReplayMemory
+from ReplayMemory import ReplayMemory
 #import gym
 
 #env = gym.make('CartPole-v1')
@@ -21,7 +21,7 @@ N_ATOM = 51
 V_MIN = -10.
 V_MAX = 10.
 V_STEP = ((V_MAX-V_MIN)/(N_ATOM-1))
-V_RANGE = np.linespace(V_MIN, V_MAX, 51) # this is why C51
+V_RANGE = np.linspace(V_MIN, V_MAX, 51) # this is why C51
 
 exploration_rate = 1
 max_exploration_rate = 1
@@ -32,6 +32,7 @@ TARGET_UPDATE_FREQUENCY = 20
 
 class C51(nn.Module):
     def __init__(self, inputs, outputs, n_action):
+        super(C51, self).__init__()
         self.N_ACTIONS = n_action
         self.N_SPACE = inputs
 
@@ -121,6 +122,9 @@ class C51(nn.Module):
         b_w = b_w.to(device)
 
         loss = torch.mean(b_w*loss)
+        
+        if self.learn_step_counter % 100 == 0 and self.learn_step_counter > 1: 
+            print("Loss : ", loss)
         
         self.optimizer.zero_grad()
         loss.backward()
