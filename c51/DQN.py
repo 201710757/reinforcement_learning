@@ -20,30 +20,12 @@ class qnet(nn.Module):
         )
         self.fc = nn.Linear(7 * 7 * 64, 512)
         
-        # action value distribution
-        self.fc_q = nn.Linear(512, 2 * 51) 
-            
-        # Initialization
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                # nn.init.orthogonal_(m.weight, gain = np.sqrt(2))
-                nn.init.xavier_normal_(m.weight)
-                nn.init.constant_(m.bias, 0.0)
-            elif isinstance(m, nn.Linear):
-                nn.init.kaiming_normal_(m.weight)
-                nn.init.constant_(m.bias, 0.0)
-            
+        self.fc_q = nn.Linear(512, 2 * 51)
 
     def forward(self, x):
-        # x.size(0) : minibatch size
-        mb_size = x.size(0)
-        # x: (m, 84, 84, 4) tensor
         x = self.feature_extraction(x / 255.0)
-        # x.size(0) : mini-batch size
-        x = x.view(x.size(0), -1)
         x = F.relu(self.fc(x))
         
-        # note that output of C-51 is prob mass of value distribution
-        action_value = F.softmax(self.fc_q(x).view(mb_size, 2, 51), dim=2)
+        action_value = F.softmax(self.fc_q(x))
 
         return action_value
