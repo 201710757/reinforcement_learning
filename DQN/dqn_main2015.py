@@ -23,7 +23,7 @@ GAMMA = 0.99
 LR = 0.01
 REPLAY_MEMORY = 10000
 BATCH_SIZE = 128
-TARGET_UPDATE_FREQUENCY = 20
+TARGET_UPDATE_FREQUENCY = 10
 
 env = gym.make('CartPole-v1')
 ACTION_SPACE = env.action_space.n
@@ -53,7 +53,7 @@ def train_minibatch(minibatch):
     
     # Q[np.arange(len(Q)), action_arr] = torch.tensor(reward_arr + GAMMA * next_state_value.max(1)[0] * (done_arr != True)).to(device)\
     #     + torch.tensor((done_arr == True) * reward_arr).to(device)
-    Q[np.arange(len(Q)), action_arr] = torch.tensor((reward_arr + GAMMA * next_state_value.max(1)[0] * (done_arr==False)) + ((done_arr==True) * reward_arr)).to(device)
+    Q[np.arange(len(Q)), action_arr] = torch.tensor((reward_arr + GAMMA * next_state_value.max(1)[0] * (done_arr==False))).to(device)
     x_batch = main_model(state_arr)
 
     criterion = nn.MSELoss()
@@ -91,7 +91,7 @@ for ep in range(episodes):
 
         n_obs, reward, done, info = env.step(a)
         if done:
-            reward = -100
+            reward = -1
         replay_buffer.push(obs, a, reward, n_obs, done)
         obs = n_obs
 
