@@ -35,7 +35,7 @@ target_model = qnet(OBSERVATION_SPACE, ACTION_SPACE).to(device)
 target_model.load_state_dict(main_model.state_dict())
 target_model.eval()
 
-optimizer = optim.Adam(main_model.parameters(), lr=LR)
+optimizer = optim.SGD(main_model.parameters(), lr=LR, momentum=0.9)
 
 
 def train_minibatch(minibatch):
