@@ -36,8 +36,8 @@ target_model.load_state_dict(main_model.state_dict())
 target_model.eval()
 
 # optimizer = optim.SGD(main_model.parameters(), lr=LR, momentum=0.9) # Not good..
-optimizer = optim.Adam(main_model.parameters(), lr=LR)
-
+# optimizer = optim.Adam(main_model.parameters(), lr=LR)
+optimizer = optim.RMSprop(main_model.parameters())
 def train_minibatch(minibatch):
     state_arr = torch.cat([torch.tensor([x[0]]).float() for x in minibatch])
     action_arr = torch.cat([torch.tensor([x[1]]) for x in minibatch])
@@ -56,10 +56,12 @@ def train_minibatch(minibatch):
     Q[np.arange(len(Q)), action_arr] = torch.tensor((reward_arr + GAMMA * next_state_value.max(1)[0] * (done_arr==False))).to(device)
     x_batch = main_model(state_arr)
 
-    criterion = nn.MSELoss()
+    criterion = nn.SmoothL1Loss()
     loss = criterion(x_batch, Q)
     optimizer.zero_grad()
     loss.backward()
+    for param in main_model.parameters():
+        param.grad.data.clamp_(-1, 1)
     optimizer.step()
 
 def pick_action(state):
