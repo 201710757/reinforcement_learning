@@ -93,7 +93,7 @@ for ep in range(episodes):
 
         n_obs, reward, done, info = env.step(a)
         if done:
-            reward = -1
+            reward = -100
         replay_buffer.push(obs, a, reward, n_obs, done)
         obs = n_obs
 
