@@ -96,7 +96,7 @@ class REINFORCE:
         done = False
         state = self.env.reset()
         while not done:
-            self.env.render()
+            #self.env.render()
             state = T.Tensor(state).view(-1).to(self.device)
             action_distribution = self.policy(state)
             action = T.distributions.Categorical(action_distribution).sample()
@@ -106,7 +106,7 @@ class REINFORCE:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Paramaters')
-    parser.add_argument('-c', '--config',  type=str, default="configs/reinforce.yaml", help='path of config file')
+    parser.add_argument('-c', '--config',  type=str, default="yaml/REINFORCE.yaml", help='path of config file')
     args = parser.parse_args()
 
     with open(args.config, 'r', encoding="utf-8") as file:
