@@ -1,10 +1,10 @@
 """ Monte-Carlo Policy Gradient """
-
 from __future__ import print_function
 from tqdm import tqdm
 import gym
 import numpy as np
 
+import MultiPro
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -48,7 +48,8 @@ class reinforce(nn.Module):
         probs = torch.squeeze(probs, 0)
         action = torch.multinomial(probs, 1)
         #print(action.item())
-        action = action.item()
+        #print("ACITON : ", action)
+        action = [act.item() for act in action]
         #action = action[0]
         return action
 
@@ -76,7 +77,10 @@ class reinforce(nn.Module):
 
 def main():
 
-    env = gym.make('CartPole-v1')
+    #env = gym.make('CartPole-v1')
+    worker = 4
+    env_name = 'CartPole-v1'
+    env = MultiPro.SubprocVecEnv([lambda: gym.make(env_name) for i in range(worker)])
 
     agent = reinforce().to('cuda')
     optimizer = optim.Adam(agent.parameters(), lr=ALPHA)
@@ -93,14 +97,20 @@ def main():
             state = torch.Tensor(state).to('cuda')
             action = agent.get_action(state)
 
-            states.append(state)
-            actions.append(action)
+            #states.append(state)
+            for i in range(len(state)):
+                states.append(state[i])
+            for i in range(len(action)):
+                actions.append(action[i])
+            #actions.append(action)
 
             state, reward, done, _ = env.step(action)
 
-            rewards.append(reward)
+            #rewards.append(reward)
+            for i in range(len(reward)):
+                rewards.append(reward[i])
 
-            if done:
+            if done.any():
                 print("Episode {} finished after {} timesteps / REWARD : {}".format(i_episode, timesteps+1, sum(rewards)))
                 break
 
