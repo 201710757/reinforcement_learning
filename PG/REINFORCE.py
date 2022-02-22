@@ -1,7 +1,7 @@
 """ Monte-Carlo Policy Gradient """
 
 from __future__ import print_function
-
+from tqdm import tqdm
 import gym
 import numpy as np
 
@@ -13,7 +13,7 @@ import torch.autograd as autograd
 from torch.autograd import Variable
 
 MAX_EPISODES = 1500
-MAX_TIMESTEPS = 200
+MAX_TIMESTEPS = 1000
 
 ALPHA = 3e-5
 GAMMA = 0.99
@@ -23,19 +23,20 @@ class reinforce(nn.Module):
     def __init__(self):
         super(reinforce, self).__init__()
         # policy network
-        self.fc1 = nn.Linear(4, 128)
+        self.fc1 = nn.Linear(4, 512)
         self.relu = nn.ReLU(inplace=True)
         self.tanh = nn.Tanh()
-        self.fc2 = nn.Linear(128, 128)
-        self.fc3 = nn.Linear(128, 2)
+        self.fc2 = nn.Linear(512, 512)
+        self.fc3 = nn.Linear(512, 2)
         self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
         x = x.to('cuda')
         x = self.fc1(x)
-        x = self.tanh(x)
+        x = self.relu(x)
+        # x = self.tanh(x)
         x = self.fc2(x)
-        x = self.tanh(x)
+        x = self.relu(x)
         x = self.fc3(x)
         x = self.softmax(x)
         return x
@@ -75,13 +76,13 @@ class reinforce(nn.Module):
 
 def main():
 
-    env = gym.make('CartPole-v0')
+    env = gym.make('CartPole-v1')
 
     agent = reinforce().to('cuda')
     optimizer = optim.Adam(agent.parameters(), lr=ALPHA)
+    # max_ep = tqdm(range(MAX_EPISODES))
 
-    for i_episode in range(MAX_EPISODES):
-
+    for i_episode in range(MAX_EPISODES):#max_ep:
         state = env.reset()
 
         states = []
