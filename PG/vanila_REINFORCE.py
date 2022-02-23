@@ -7,29 +7,34 @@ from torch.distributions.categorical import Categorical
 import matplotlib.pyplot as plt
 import numpy as np
 import gym
-
+device = torch.device("cuda")
 class Policy(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim, dropout = 0.5):
         super().__init__()
 
         self.fc1 = nn.Linear(input_dim, hidden_dim)
-        self.fc2 = nn.Linear(hidden_dim, output_dim)
+        self.fc2 = nn.Linear(hidden_dim, hidden_dim)
+        self.fc3 = nn.Linear(hidden_dim, output_dim)
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, x):
+        x = x.to(device)
         x = self.fc1(x)
         x = self.dropout(x)
         x = F.relu(x)
         x = self.fc2(x)
+        x = self.dropout(x)
+        x = F.relu(x)
+        x = self.fc3(x)
 
         return x
 
 env = gym.make('CartPole-v1')
 input_dim = env.observation_space.shape[0]
-hidden_dim = 128
+hidden_dim = 1024
 output_dim = env.action_space.n
 
-policy = Policy(input_dim, hidden_dim, output_dim)
+policy = Policy(input_dim, hidden_dim, output_dim).to(device)
 
 def init_weights(m):
     if type(m) == nn.Linear:
@@ -54,7 +59,7 @@ for ep in range(MAX_EP):
     s = env.reset()
 
     while not d:
-        s = torch.FloatTensor(s).unsqueeze(0)
+        s = torch.FloatTensor(s).to(device).unsqueeze(0)
         
         action_pred = policy(s)
         action_prob = F.softmax(action_pred, dim=-1)
@@ -80,7 +85,7 @@ for ep in range(MAX_EP):
     for r in reversed(rewards):
         R = r + R*GAMMA
         returns.insert(0, R)
-    returns = torch.tensor(returns)
+    returns = torch.tensor(returns).to(device)
 
     if normalize:
         returns = (returns - returns.mean()) / returns.std()
