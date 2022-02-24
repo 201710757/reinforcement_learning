@@ -4,6 +4,8 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch.distributions.categorical import Categorical
 
+import MultiPro
+
 import matplotlib.pyplot as plt
 import numpy as np
 import gym
@@ -29,7 +31,11 @@ class Policy(nn.Module):
 
         return x
 
-env = gym.make('CartPole-v1')
+# env = gym.make('CartPole-v1')
+worker = 8
+env_name = 'CartPole-v1'
+env = MultiPro.SubprocVecEnv([lambda: gym.make(env_name) for i in range(worker)])
+
 input_dim = env.observation_space.shape[0]
 hidden_dim = 1024
 output_dim = env.action_space.n
@@ -45,7 +51,7 @@ policy.apply(init_weights)
 LR = 1e-3
 optimizer = optim.Adam(policy.parameters(), lr = LR)
 
-MAX_EP = 500
+MAX_EP = 5000
 GAMMA = 0.99
 
 train_reward = []
@@ -53,12 +59,12 @@ policy.train()
 for ep in range(MAX_EP):
     log_prob_actions = []
     rewards = []
-    d = False
+    d = np.array([False])
     ep_reward = 0
 
     s = env.reset()
 
-    while not d:
+    while not d.any():
         s = torch.FloatTensor(s).to(device).unsqueeze(0)
         
         action_pred = policy(s)
@@ -68,7 +74,8 @@ for ep in range(MAX_EP):
         action = dist.sample()
 
         log_prob_action = dist.log_prob(action)
-        s, r, d, _ = env.step(action.item())
+        # print("ACITON : ", action.reshape(-1).cpu().data.numpy())
+        s, r, d, _ = env.step(action.reshape(-1).cpu().data.numpy())
         
         log_prob_actions.append(log_prob_action)
         rewards.append(r)
