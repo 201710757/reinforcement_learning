@@ -55,13 +55,10 @@ class ActorCritic(nn.Module):
         loss = 0
         for logprob, value, reward in zip(self.log_prob_actions, self.state_values, returns):
             advantage = reward - value.reshape(-1)
-            print(reward)
-            print("-------------------")
-            print(value.reshape(-1))
             action_loss = -logprob * advantage
             value_loss = F.smooth_l1_loss(value, reward)
 
-            loss += (action_loss + value_loss).sum()
+            loss += (action_loss + value_loss).sum().float()
         return loss
 
     # Why?
