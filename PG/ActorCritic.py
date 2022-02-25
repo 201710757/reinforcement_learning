@@ -31,7 +31,7 @@ class ActorCritic(nn.Module):
         state_value = self.value_layer(state)
         # state_value = self.dropout(state_value)
 
-        action_prob = F.softmax(self.action_layer(state))
+        action_prob = F.softmax(self.action_layer(state), dim=1)
         dist = Categorical(action_prob)
         action = dist.sample()
 
