@@ -50,6 +50,9 @@ class ActorCritic(nn.Module):
             returns = torch.tensor(returns)
             returns = (returns - returns.mean()) / returns.std()
 
+        print(self.state_values)
+        print("---------")
+        prnit(returns)
         # will be reduced - code
         loss = 0
         for logprob, value, reward in zip(self.log_prob_actions, self.state_values, returns):
