@@ -47,6 +47,7 @@ class ActorCritic(nn.Module):
             R = r + GAMMA * R
             returns.insert(0, R)
         if normalize:
+            returns = torch.tensor(returns)
             returns = (returns - returns.mean()) / returns.std()
 
         # will be reduced - code
