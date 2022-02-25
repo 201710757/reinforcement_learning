@@ -46,8 +46,8 @@ class ActorCritic(nn.Module):
         for r in reversed(self.rewards):
             R = r + GAMMA * R
             returns.insert(0, R)
+        returns = torch.tensor(returns).to(device)
         if normalize:
-            returns = torch.tensor(returns)
             returns = (returns - returns.mean()) / returns.std()
 
         print(self.state_values)
