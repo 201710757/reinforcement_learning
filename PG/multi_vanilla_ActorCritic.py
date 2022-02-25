@@ -45,8 +45,8 @@ for ep in range(MAX_EP):
         action = policy(s)
         s, r, d, _ = env.step(action.reshape(-1).cpu().data.numpy())
         
-        gpu_reward = torch.tensor(r).to(device)
-        policy.rewards.append(gpu_reward)
+        # gpu_reward = torch.tensor(r).to(device)
+        policy.rewards.append(r)
         ep_reward += r
 
 
