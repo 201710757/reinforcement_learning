@@ -38,7 +38,7 @@ class ActorCritic(nn.Module):
         self.log_prob_actions.append(dist.log_prob(action))
         self.state_values.append(state_value)
 
-        return action.item()
+        return action
 
     def loss(self, GAMMA=0.99, normalize = True):
         returns = []
