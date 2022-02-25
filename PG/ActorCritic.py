@@ -52,7 +52,7 @@ class ActorCritic(nn.Module):
 
         print(self.state_values)
         print("---------")
-        prnit(returns)
+        print(returns)
         # will be reduced - code
         loss = 0
         for logprob, value, reward in zip(self.log_prob_actions, self.state_values, returns):
