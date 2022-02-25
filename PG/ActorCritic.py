@@ -25,7 +25,7 @@ class ActorCritic(nn.Module):
         self.rewards = []
 
     def forward(self, state):
-        state = torch.from_numpy(state).float()
+        # state = torch.from_numpy(state).float()
         state = F.relu(state)
         state_value = self.value_layer(state)
         # state_value = self.dropout(state_value)
