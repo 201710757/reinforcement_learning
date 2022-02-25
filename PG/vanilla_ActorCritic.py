@@ -42,7 +42,7 @@ for ep in range(MAX_EP):
         action = policy(s)
         s, r, d, _ = env.step(action)
         
-        gpu_reward = torch.FloatTensor(r).to(device)
+        gpu_reward = torch.tensor(r).to(device)
         policy.rewards.append(gpu_reward)
         ep_reward += r
 
