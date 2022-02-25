@@ -46,7 +46,7 @@ class ActorCritic(nn.Module):
         for r in reversed(self.rewards):
             R = r + GAMMA * R
             returns.insert(0, R)
-        print(returns)
+        # print(returns)
         returns = torch.tensor(returns).to(device)
         if normalize:
             returns = (returns - returns.mean()) / returns.std()
@@ -54,7 +54,7 @@ class ActorCritic(nn.Module):
         # will be reduced - code
         loss = 0
         for logprob, value, reward in zip(self.log_prob_actions, self.state_values, returns):
-            advantage = reward - value.item()
+            advantage = reward - value.reshape(-1)
             action_loss = -logprob * advantage
             value_loss = F.smooth_l1_loss(value, reward)
 
