@@ -12,12 +12,14 @@ class ActorCritic(nn.Module):
         self.affine = nn.Linear(input_dim, hidden_dim)
 
         # Actor
+        self.actor_aff = nn.Linear(hidden_dim, hidden_dim)
         self.action_layer = nn.Linear(hidden_dim, output_dim)
 
         # Critic
+        self.critic_aff = nn.Linear(hidden_dim ,hidden_dim)
         self.value_layer = nn.Linear(hidden_dim, 1)
 
-        # dont use it now..
+        # use it now!
         self.dropout = nn.Dropout(dropout)
         
         self.log_prob_actions = []
@@ -28,10 +30,19 @@ class ActorCritic(nn.Module):
         # state = torch.from_numpy(state).float()
         state = self.affine(state)
         state = F.relu(state)
-        state_value = self.value_layer(state)
-        # state_value = self.dropout(state_value)
+        state = self.dropout(state)
 
-        action_prob = F.softmax(self.action_layer(state), dim=-1)
+        state_v = self.critic_aff(state)
+        state_v = F.relu(state_v)
+        state_v = self.dropout(state_v)
+        state_value = self.value_layer(state_v)
+        # state_value = self.dropout(state_value)
+        
+
+        action_v = self.actor_aff(state)
+        action_v = F.relu(action_v)
+        action_v = self.dropout(action_v)
+        action_prob = F.softmax(self.action_layer(action_v), dim=-1)
         dist = Categorical(action_prob)
         action = dist.sample()
 
