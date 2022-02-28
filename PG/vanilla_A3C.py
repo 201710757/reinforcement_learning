@@ -17,7 +17,7 @@ device = torch.device("cuda")
 env_name = 'LunarLander-v2'
 env = gym.make(env_name)
 
-writer = SummaryWriter("runs/"+ env_name + "-" + time.time())
+writer = SummaryWriter("runs/"+ env_name + "-" + str(time.time()))
 
 input_dim = env.observation_space.shape[0]
 hidden_dim = 1024
@@ -25,6 +25,8 @@ output_dim = env.action_space.n
 LR = 1e-3
 MAX_EP = 5000
 
+# 4 : memory error
+process_num = 3
 
 
 def train(g_policy, model_num):
@@ -84,7 +86,6 @@ if __name__ == "__main__":
     global_policy.share_memory()
 
     processes = []
-    process_num = 4
 
 
     global_policy.apply(init_weights)
