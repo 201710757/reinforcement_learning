@@ -1,3 +1,3 @@
 # todo
 
-A3C batch version
+Actor and Critic separate & A3C batch version
