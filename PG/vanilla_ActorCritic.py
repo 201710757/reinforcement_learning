@@ -40,7 +40,7 @@ for ep in range(MAX_EP):
     while not d:
         s = torch.FloatTensor(s).to(device).unsqueeze(0)
         action = policy(s)
-        s, r, d, _ = env.step(action)
+        s, r, d, _ = env.step(action.item())
         
         gpu_reward = torch.tensor(r).to(device)
         policy.rewards.append(gpu_reward)
