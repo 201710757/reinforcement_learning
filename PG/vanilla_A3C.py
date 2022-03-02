@@ -17,7 +17,7 @@ device = torch.device("cuda")
 env_name = 'LunarLander-v2'
 env = gym.make(env_name)
 
-writer = SummaryWriter("runs/"+ env_name + "-" + str(time.time()))
+writer = SummaryWriter("runs/"+ env_name)
 
 input_dim = env.observation_space.shape[0]
 hidden_dim = 1024
