@@ -29,7 +29,8 @@ MAX_EP = 5000
 # 4 : memory error
 process_num = 3
 batch_size = 5
-
+GAMMA = 0.99
+MAX_STEP = 20000
 
 def train(g_actor, g_critic, model_num):
     env = gym.make(env_name)
@@ -51,7 +52,7 @@ def train(g_actor, g_critic, model_num):
         d = False
         step = 0
 
-        while (not d) and (step < 20000):
+        while (not d) and (step < MAX_STEP):
             _s = torch.FloatTensor(s).to(device)
             action_prob = local_actor(_s)
             action_dist = Categorical(action_prob)
@@ -82,7 +83,7 @@ def train(g_actor, g_critic, model_num):
                 v_s = local_critic(s_buf)
                 v_s_p = local_critic(s_p_buf)
 
-                Q = r_buf + 0.99 * v_s_p.detach()*d_buf
+                Q = r_buf + GAMMA * v_s_p.detach()*d_buf
                 A = Q - v_s
 
                 local_optimizer_critic.zero_grad()
@@ -119,9 +120,6 @@ def train(g_actor, g_critic, model_num):
 
         if ep % 100 == 0:
             print("MODEL{} - EP : {} | Mean Reward : {}".format(model_num, ep, np.mean(train_reward[-100:])))
-        #if np.mean(train_reward[-10:]) >= 475:
-        #    print("MODEL{} - CLEAR!!".format(model_num))
-        #    break
 
 def init_weights(m):
         if type(m) == nn.Linear:
