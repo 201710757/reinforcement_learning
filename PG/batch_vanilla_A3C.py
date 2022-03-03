@@ -76,7 +76,7 @@ def train(g_actor, g_critic, model_num):
                     prob_buf.append(item[3])
                 s_buf = torch.FloatTensor(s_buf).to(device)
                 r_buf = torch.FloatTensor(r_buf).unsqueeze(1).to(device)
-                d_buf = torch.FloatTensor(d_buf).to(device)
+                d_buf = torch.FloatTensor(d_buf).unsqueeze(1).to(device)
                 s_p_buf = torch.FloatTensor(s_p_buf).to(device)
 
                 v_s = local_critic(s_buf)
