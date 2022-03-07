@@ -17,39 +17,38 @@ from multi_armed_bandit import MAB
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')#torch.device("cuda")
 # env_name = 'CartPole-v1'
 env_name = 'MultiArmedBandit'
-envs = MAB(n=3)# for i in range(5001)]#gym.make(env_name)
+envs = MAB(n=5)# for i in range(5001)]#gym.make(env_name)
 
 writer = SummaryWriter("runs/"+ env_name)
 
 input_dim = 4#env.observation_space.shape[0]
-hidden_dim = 1024
+hidden_dim = 32 
 output_dim = 3#env.action_space.n
 LR = 1e-3
 MAX_EP = 5000
-
+RESET_TERM = 20
 # 4 : memory error
 # 1 : A2C
 process_num = 1
 
 ENV_NUM = 0
 def train(g_policy, model_num):
-    env = MAB(n=3)#envs[ENV_NUM]#gym.make(env_name)
     local_policy = ActorCritic(input_dim, hidden_dim, output_dim).to(device)
     local_policy.load_state_dict(g_policy.state_dict())
     
     local_optimizer = optim.Adam(g_policy.parameters(), lr = LR)
-    for _ in range(MAX_EP):
+    for idx in range(MAX_EP//RESET_TERM):
         train_reward = []
         
         # reset LSTM
         local_policy.reset_lstm()
-        for ep in range(1):
+        for ep in range(RESET_TERM):
             ep_reward = 0
             step = 0
             d = False
             a = 0
             r = 0
-            env = MAB(n=3) 
+            env = MAB(n=5) 
             while not d:
                 step += 1
                 if step == 100:
@@ -77,15 +76,10 @@ def train(g_policy, model_num):
             local_policy.clearMemory()
             train_reward.append(ep_reward)
             
-            if ep % 10 == 0 and model_num == 0:
-                writer.add_scalar("Model - Average 10 steps", np.mean(train_reward[-100:]), ep)
-
-            if ep % 100 == 0:
-                print("ENV{} => MODEL{} - EP : {} | Mean Reward : {}".format(" ", model_num, ep, np.mean(train_reward[-100:])))
-            #if np.mean(train_reward[-10:]) >= 475:
-            #    print("MODEL{} - CLEAR!!".format(model_num))
-            #    break
-
+            writer.add_scalar("Model - Each episode", ep_reward, ep)
+            #print("Try - {} => Mean Reward : {}".format(idx, ep_reward))
+        if idx % 10 == 0:
+            print(idx, " / ", MAX_EP//RESET_TERM)
 def init_weights(m):
         if type(m) == nn.Linear:
             torch.nn.init.xavier_normal_(m.weight)
