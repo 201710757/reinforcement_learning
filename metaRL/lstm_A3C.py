@@ -37,6 +37,8 @@ def train(g_policy, model_num):
     local_policy.load_state_dict(g_policy.state_dict())
     
     local_optimizer = optim.Adam(g_policy.parameters(), lr = LR)
+
+    cnt = 0
     for idx in range(MAX_EP//RESET_TERM):
         train_reward = []
         
@@ -76,7 +78,8 @@ def train(g_policy, model_num):
             local_policy.clearMemory()
             train_reward.append(ep_reward)
             
-            writer.add_scalar("Model - Each episode", ep_reward, ep)
+            writer.add_scalar("Model - Each episode", ep_reward, cnt)
+            cnt += 1
             #print("Try - {} => Mean Reward : {}".format(idx, ep_reward))
         if idx % 10 == 0:
             print(idx, " / ", MAX_EP//RESET_TERM)
