@@ -72,7 +72,8 @@ class ActorCritic(nn.Module):
             #print(loss)
         return loss
     def reset_lstm(self):
-        torch.nn.init.normal_(self.affine.weight)
+        self.affine.weight_hh_l0.data.fill_(0)
+        #torch.nn.init.normal_(self.affine.weight)
     # Why?
     def clearMemory(self):
         del self.log_prob_actions[:]

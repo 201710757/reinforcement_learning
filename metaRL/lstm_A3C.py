@@ -17,7 +17,7 @@ from multi_armed_bandit import MAB
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')#torch.device("cuda")
 # env_name = 'CartPole-v1'
 env_name = 'MultiArmedBandit'
-envs = [MAB(n=3) for i in range(5001)]#gym.make(env_name)
+envs = MAB(n=3)# for i in range(5001)]#gym.make(env_name)
 
 writer = SummaryWriter("runs/"+ env_name)
 
@@ -28,11 +28,12 @@ LR = 1e-3
 MAX_EP = 5000
 
 # 4 : memory error
-process_num = 3
+# 1 : A2C
+process_num = 1
 
 ENV_NUM = 0
 def train(g_policy, model_num):
-    env = envs[ENV_NUM]#gym.make(env_name)
+    env = MAB(n=3)#envs[ENV_NUM]#gym.make(env_name)
     local_policy = ActorCritic(input_dim, hidden_dim, output_dim).to(device)
     local_policy.load_state_dict(g_policy.state_dict())
     
@@ -48,8 +49,7 @@ def train(g_policy, model_num):
             d = False
             a = 0
             r = 0
-            env = envs[ENV_NUM]
-            ENV_NUM += 1
+            env = MAB(n=3) 
             while not d:
                 step += 1
                 if step == 100:
@@ -58,7 +58,7 @@ def train(g_policy, model_num):
                 s = torch.FloatTensor(s).to(device).unsqueeze(0)
 
                 action = local_policy(s)
-                r = envs[ENV_NUM].pull(action.item())#env.step(action.item())
+                r = envs.pull(action.item())#env.step(action.item())
                 
                 gpu_reward = torch.tensor(r).type(torch.FloatTensor).to(device)
                 local_policy.rewards.append(gpu_reward)
@@ -81,7 +81,7 @@ def train(g_policy, model_num):
                 writer.add_scalar("Model - Average 10 steps", np.mean(train_reward[-100:]), ep)
 
             if ep % 100 == 0:
-                print("ENV{} => MODEL{} - EP : {} | Mean Reward : {}".format(ENV_NUM, model_num, ep, np.mean(train_reward[-100:])))
+                print("ENV{} => MODEL{} - EP : {} | Mean Reward : {}".format(" ", model_num, ep, np.mean(train_reward[-100:])))
             #if np.mean(train_reward[-10:]) >= 475:
             #    print("MODEL{} - CLEAR!!".format(model_num))
             #    break
