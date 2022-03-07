@@ -28,7 +28,7 @@ MAX_EP = 5000
 
 # 4 : memory error
 process_num = 3
-batch_size = 5
+batch_size = 1
 GAMMA = 0.99
 MAX_STEP = 20000
 
