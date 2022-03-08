@@ -24,6 +24,7 @@ hidden_dim = 1024
 output_dim = env.action_space.n
 LR = 1e-3
 MAX_EP = 5000
+GAMMA = 0.99
 
 # 4 : memory error
 process_num = 3
@@ -35,11 +36,6 @@ def train(g_policy, model_num):
     local_policy.load_state_dict(g_policy.state_dict())
     
     local_optimizer = optim.Adam(g_policy.parameters(), lr = LR)
-    
-#    log_prob_action = []
-#    values = []
-#    rewards = []
-#    done = False
 
 
     train_reward = []
@@ -59,35 +55,28 @@ def train(g_policy, model_num):
             action_prob = F.softmax(action_pred, dim=-1)
             dist = Categorical(action_prob)
             action = dist.sample()
-            log_prob_action = dist.log_prob(action)
+            #log_prob_action = dist.log_prob(action)
 
             s, r, d, _ = env.step(action.item())
-            #print(log_prob_action)
-            log_prob_actions.append(log_prob_action)
+            
+            log_prob_actions.append(dist.log_prob(action))
             state_values.append(state_pred)
             rewards.append(r)
 
-            #gpu_reward = torch.tensor(r).type(torch.FloatTensor).to(device)
-            #local_policy.rewards.append(gpu_reward)
             ep_reward += r
         log_prob_actions = torch.cat(log_prob_actions).to(device)
         state_values = torch.cat(state_values).squeeze(-1).to(device)
-        #print(log_prob_actions)
 
         returns = []
         R = 0
         for r in reversed(rewards):
-            R = r + 0.99*R
+            R = r + GAMMA*R
             returns.insert(0, R)
         returns = torch.tensor(returns).float().to(device)
         returns = (returns - returns.mean()) / returns.std()
         
-        #state_values = torch.tensor(state_values).to(device)
         advantage = returns - state_values
         advantage = (advantage - advantage.mean()) / advantage.std()
-
-        #log_prob_actions = torch.tensor(log_prob_actions).to(device)
-        #print(log_prob_actions)
 
         advantage = advantage.detach()
         returns = returns.detach()
@@ -99,15 +88,12 @@ def train(g_policy, model_num):
         action_loss.backward(retain_graph=True)
         value_loss.backward()
 
-        #loss = local_policy.loss()
-        #loss.backward()
         for g_param, l_param in zip(g_policy.parameters(), local_policy.parameters()):
             g_param._grad = l_param._grad
         local_optimizer.step()
 
         local_policy.load_state_dict(g_policy.state_dict())
 
-        #local_policy.clearMemory()
         train_reward.append(ep_reward)
         
         if ep % 10 == 0 and model_num == 0:
@@ -115,9 +101,6 @@ def train(g_policy, model_num):
 
         if ep % 100 == 0:
             print("MODEL{} - EP : {} | Mean Reward : {}".format(model_num, ep, np.mean(train_reward[-100:])))
-        #if np.mean(train_reward[-10:]) >= 475:
-        #    print("MODEL{} - CLEAR!!".format(model_num))
-        #    break
 
 def init_weights(m):
         if type(m) == nn.Linear:
@@ -133,10 +116,7 @@ if __name__ == "__main__":
 
     processes = []
 
-
     global_policy.apply(init_weights)
-
-    # global_optimizer = optim.Adam(global_policy.parameters(), lr = LR)
     global_policy.train()
 
 
