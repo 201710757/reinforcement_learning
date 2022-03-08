@@ -25,8 +25,8 @@ input_dim = 4#env.observation_space.shape[0]
 hidden_dim = 32 
 output_dim = 3#env.action_space.n
 LR = 1e-3
-MAX_EP = 1500
-RESET_TERM = 100
+MAX_EP = 5000
+RESET_TERM = 300
 # 4 : memory error
 # 1 : A2C
 process_num = 1
