@@ -26,7 +26,7 @@ hidden_dim = 32
 output_dim = 3#env.action_space.n
 LR = 1e-3
 MAX_EP = 5000
-RESET_TERM = 300
+RESET_TERM = 100
 # 4 : memory error
 # 1 : A2C
 process_num = 1
