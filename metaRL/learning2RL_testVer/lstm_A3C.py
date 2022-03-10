@@ -31,6 +31,8 @@ RESET_TERM = 100
 # 1 : A2C
 process_num = 1
 
+GAMMA = 0.99
+
 ENV_NUM = 0
 def train(g_policy, model_num):
     local_policy = ActorCritic(input_dim, hidden_dim, output_dim).to(device)
@@ -50,32 +52,68 @@ def train(g_policy, model_num):
             d = False
             a = 0
             r = 0
+            
+            log_prob_actions = []
+            state_values = []
+            rewards = []
+            actions = []
+
             env = MAB(n=5) 
             while not d:
                 step += 1
                 if step == 100:
                     d = True
-                s = [0.0, a, r, d]#env.reset() 
+                if len(actions) > 0 and len(rewards) > 0 :
+                    lstm_a, lstm_r = actions[-1], rewards[-1]
+                else:
+                    lstm_a, lstm_r = 0.0, 0.0
+                s = [0.0, a, r, d, lstm_a, lstm_r]#env.reset() 
                 s = torch.FloatTensor(s).to(device).unsqueeze(0)
 
-                action = local_policy(s)
-                r = envs.pull(action.item())#env.step(action.item())
+                state_pred, action_pred = local_policy(s)
+                action_prob = F.softmax(action_pred, dim=-1)
+                dist = Categorical(action_prob)
+                action = dist.sample()
+                _action = action.item()
+
+                actions.append(_action)
+                r = envs.pull(_action)#env.step(action.item())
                 
-                gpu_reward = torch.tensor(r).type(torch.FloatTensor).to(device)
-                local_policy.rewards.append(gpu_reward)
+                log_prob_actions.append(dist.log_prob(action))
+                state_values.append(state_pred)
+                rewards.append(r)
+
                 ep_reward += r
+            log_prob_actions = torch.cat(log_prob_actions).to(device)
+            state_values = torch.cat(state_values).to(device)
+            
+            returns = []
+            R = 0
+            for r in reversed(rewards):
+                R = r + GAMMA*R
+                returns.insert(0, R)
+            returns = torch.tensor(returns).float().to(device)
+            returns = (returns - returns.mean()) / returns.std()
 
+            advantage = returns - state_values
+            advantage = (advantage - advantage.mean()) / advantage.std()
 
+            advantage = advantage.detach()
+            returns = returns.detach()
+
+            action_loss = -(advantage * log_prob_actions).sum()
+            value_loss = F.smooth_l1_loss(state_values, returns).sum()
+
+            loss = action_loss + value_loss
             local_optimizer.zero_grad()
-            loss = local_policy.loss()
             loss.backward()
+
             for g_param, l_param in zip(g_policy.parameters(), local_policy.parameters()):
                 g_param._grad = l_param._grad
             local_optimizer.step()
 
             local_policy.load_state_dict(g_policy.state_dict())
 
-            local_policy.clearMemory()
             train_reward.append(ep_reward)
             
             writer.add_scalar("Model - Each episode", ep_reward, cnt)
