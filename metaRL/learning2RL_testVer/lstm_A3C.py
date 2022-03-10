@@ -19,16 +19,16 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')#torch.de
 env_name = 'MultiArmedBandit'
 k = 50
 
-envs = MAB(n=k)# for i in range(5001)]#gym.make(env_name)
+env = MAB(n=k)# for i in range(5001)]#gym.make(env_name)
 
 writer = SummaryWriter("runs/"+ env_name)
 
-input_dim = 4#env.observation_space.shape[0]
-hidden_dim = 32 
+input_dim = 3#env.observation_space.shape[0]
+hidden_dim = 1024
 output_dim = k#env.action_space.n
 LR = 1e-3
-MAX_EP = 5000
-RESET_TERM = 100
+MAX_EP = 27000*3
+RESET_TERM = 3000*3*3
 # 4 : memory error
 # 1 : A2C
 process_num = 1
@@ -45,8 +45,9 @@ def train(g_policy, model_num):
     cnt = 0
     for idx in range(MAX_EP//RESET_TERM):
         train_reward = []
-        
+        ep_reward = 0
         # reset LSTM
+        print("LSTM reset")
         local_policy.reset_lstm()
         for ep in range(RESET_TERM):
             ep_reward = 0
@@ -60,7 +61,9 @@ def train(g_policy, model_num):
             rewards = []
             actions = []
 
-            env = MAB(n=k) 
+            if ep % 9000 == 0:
+                print("env created")
+                env = MAB(n=k) 
             while not d:
                 step += 1
                 if step == 100:
@@ -69,7 +72,7 @@ def train(g_policy, model_num):
                     lstm_a, lstm_r = actions[-1], rewards[-1]
                 else:
                     lstm_a, lstm_r = 0.0, 0.0
-                s = [0.0, a, r, d, lstm_a, lstm_r]#env.reset() 
+                s = [a, r, d, lstm_a, lstm_r]#env.reset() 
                 s = torch.FloatTensor(s).to(device).unsqueeze(0)
 
                 state_pred, action_pred = local_policy(s)
@@ -79,7 +82,7 @@ def train(g_policy, model_num):
                 _action = action.item()
 
                 actions.append(_action)
-                r = envs.pull(_action)#env.step(action.item())
+                r = env.pull(_action)#env.step(action.item())
                 
                 log_prob_actions.append(dist.log_prob(action))
                 state_values.append(state_pred)
@@ -120,9 +123,11 @@ def train(g_policy, model_num):
             
             writer.add_scalar("Model - Each episode", ep_reward, cnt)
             cnt += 1
-            #print("Try - {} => Mean Reward : {}".format(idx, ep_reward))
-        if idx % 10 == 0:
-            print(idx, " / ", MAX_EP//RESET_TERM)
+            if ep % 100 == 0:
+                print("Try - {} | Env - {} => Mean Reward : {}".format(idx, ep, np.mean(train_reward)))
+                train_reward = []
+            
+        #print(idx, " / ", MAX_EP//RESET_TERM, "   Reward : ", ep_reward)
 def init_weights(m):
         if type(m) == nn.Linear:
             torch.nn.init.xavier_normal_(m.weight)
