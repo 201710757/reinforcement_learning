@@ -17,13 +17,15 @@ from multi_armed_bandit import MAB
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')#torch.device("cuda")
 # env_name = 'CartPole-v1'
 env_name = 'MultiArmedBandit'
-envs = MAB(n=5)# for i in range(5001)]#gym.make(env_name)
+k = 50
+
+envs = MAB(n=k)# for i in range(5001)]#gym.make(env_name)
 
 writer = SummaryWriter("runs/"+ env_name)
 
 input_dim = 4#env.observation_space.shape[0]
 hidden_dim = 32 
-output_dim = 3#env.action_space.n
+output_dim = k#env.action_space.n
 LR = 1e-3
 MAX_EP = 5000
 RESET_TERM = 100
@@ -58,7 +60,7 @@ def train(g_policy, model_num):
             rewards = []
             actions = []
 
-            env = MAB(n=5) 
+            env = MAB(n=k) 
             while not d:
                 step += 1
                 if step == 100:
