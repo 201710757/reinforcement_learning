@@ -55,7 +55,6 @@ def train(g_policy, model_num):
             action_prob = F.softmax(action_pred, dim=-1)
             dist = Categorical(action_prob)
             action = dist.sample()
-            #log_prob_action = dist.log_prob(action)
 
             s, r, d, _ = env.step(action.item())
             
@@ -84,12 +83,8 @@ def train(g_policy, model_num):
         value_loss = F.smooth_l1_loss(state_values, returns).sum()
         
         loss = action_loss + value_loss
-
         local_optimizer.zero_grad()
-
         loss.backward()
-        #action_loss.backward(retain_graph=True)
-        #value_loss.backward()
 
         for g_param, l_param in zip(g_policy.parameters(), local_policy.parameters()):
             g_param._grad = l_param._grad
@@ -113,7 +108,6 @@ def init_weights(m):
 
 if __name__ == "__main__":
     
-
     global_policy = ActorCritic(input_dim, hidden_dim, output_dim).to(device)
     global_policy.share_memory()
 
