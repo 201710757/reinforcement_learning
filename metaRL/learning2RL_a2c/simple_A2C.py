@@ -112,8 +112,7 @@ def train():
 
         train_reward.append(ep_reward)
         
-        if ep % 10 == 0: #and model_num == 0:
-            writer.add_scalar("Model - Average 10 steps", np.mean(train_reward[-10:]), ep)
+        writer.add_scalar("Model ep reward", ep_reward, ep)
 
         #if ep % 10 == 0:
         #    print("MODEL{} - EP : {} | Mean Reward : {}".format("A2C", ep, np.mean(train_reward[-10:])))
