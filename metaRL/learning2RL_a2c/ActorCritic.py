@@ -9,8 +9,8 @@ class ActorCritic(nn.Module):
     def __init__(self, input_dim, hidden_dim, output_dim, dropout = 0.5):
         super(ActorCritic, self).__init__()
         
-        self.encoder = nn.Linear(input_dim, hidden_dim)
-        self.lstm = nn.LSTM(hidden_dim+2+1, hidden_dim)
+        #self.encoder = nn.Linear(input_dim, hidden_dim)
+        self.lstm = nn.LSTM(input_dim+2+1, hidden_dim)
 
         # Actor
         self.action_layer = nn.Linear(hidden_dim, output_dim)
@@ -26,14 +26,9 @@ class ActorCritic(nn.Module):
 
         if memory == None:
             memory = self.init_lstm_state()
-        #state = torch.tensor(state)#.unsqueeze(0)
-        state = self.encoder(state)
+        #state = self.encoder(state)
         
-        #print(state)
-        #print('-')
-        #print(*past_in)
         state = torch.cat((state, *past_in), dim=-1).unsqueeze(0)
-        #print(state)
         state, memory = self.lstm(state.unsqueeze(0), memory)
         
 

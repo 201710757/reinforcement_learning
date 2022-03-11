@@ -82,6 +82,7 @@ def train():
 
             ep_reward += r
         
+        print("ep {} - reward {} ".format(ep, ep_reward))
         log_prob_actions = torch.cat(log_prob_actions).to(device)
         state_values = torch.cat(state_values).squeeze(-1).to(device)
 
@@ -114,8 +115,8 @@ def train():
         if ep % 10 == 0: #and model_num == 0:
             writer.add_scalar("Model - Average 10 steps", np.mean(train_reward[-10:]), ep)
 
-        if ep % 10 == 0:
-            print("MODEL{} - EP : {} | Mean Reward : {}".format("A2C", ep, np.mean(train_reward[-10:])))
+        #if ep % 10 == 0:
+        #    print("MODEL{} - EP : {} | Mean Reward : {}".format("A2C", ep, np.mean(train_reward[-10:])))
 
 def init_weights(m):
         if type(m) == nn.Linear:
