@@ -13,8 +13,10 @@ from ActorCritic import ActorCritic
 from multi_armed_bandit import MAB
 import torch.multiprocessing as mp
 
+
+import time
 device = torch.device("cuda:0")
-env_name = 'Multi_Armed_Bandit'
+env_name = 'Multi_Armed_Bandit_' + time.ctime(time.time())
 k = 2
 env = MAB(k)
 
@@ -51,6 +53,10 @@ def train():
             #rnn_state = rnn_state[0].detach(), rnn_state[1].detach()
         #else:
         rnn_state = policy.init_lstm_state()
+        if ep % 10 == 0:
+            env = MAB(k)
+            #print('prob : ', env.prob)
+
         d = False
         while not d:
             if step == 100:
@@ -84,7 +90,8 @@ def train():
 
             ep_reward += r
         
-        print("ep {} - reward {} ".format(ep, ep_reward))
+        #if ep % 10 == 0:
+        print("prob : {} | ep {} - reward {} ".format(env.prob, ep, ep_reward))
         log_prob_actions = torch.cat(log_prob_actions).to(device)
         state_values = torch.cat(state_values).squeeze(-1).to(device)
 
