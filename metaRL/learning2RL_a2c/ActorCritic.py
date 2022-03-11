@@ -22,13 +22,28 @@ class ActorCritic(nn.Module):
         nn.init.orthogonal_(self.value_layer.weight.data, 1)
         self.value_layer.bias.data.fill_(0)
 
-    def forward(self, state):
-        state = self.affine(state)
+    def forward(self, state, past_in, memory=None):
+
+        if memory == None:
+            memory = self.init_lstm_state()
+        #state = torch.tensor(state)#.unsqueeze(0)
+        state = self.encoder(state)
+        
+        #print(state)
+        #print('-')
+        #print(*past_in)
+        state = torch.cat((state, *past_in), dim=-1).unsqueeze(0)
+        #print(state)
+        state, memory = self.lstm(state.unsqueeze(0), memory)
         
 
         state_value = self.value_layer(state)
         
         action_value = self.action_layer(state)
 
-        return state_value, action_value
-
+        return state_value, action_value, memory
+    
+    def init_lstm_state(self):
+        h0 = torch.zeros(1, 1, self.lstm.hidden_size).float().to(device)
+        c0 = torch.zeros(1, 1, self.lstm.hidden_size).float().to(device)
+        return (h0, c0)
