@@ -56,7 +56,7 @@ def train():
         if ep % 100 == 0:
             env = MAB(k)
             #print('prob : ', env.prob)
-
+            writer.add_hparams({'ep':int(ep/100), 'prob1':env.prob[0], 'prob2':env.prob[1]})
         d = False
         while not d:
             if step == 100:
