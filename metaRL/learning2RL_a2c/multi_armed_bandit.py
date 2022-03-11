@@ -2,10 +2,17 @@ import random
 import torch
 class MAB:
     def __init__(self, n=2):
-        #self.prob = [0.1, 0.9]
         self.prob = [0.1, 0.9]
+       
         self.prob = self.prob[::-1] if random.random() < 0.5 else self.prob
-    
+        
+        m = torch.nn.Softmax(dim=0)
+        r = random.random()
+        self.prob = m(torch.tensor([r, 1-r])).numpy()
+        
+        self.prob = [r, 1-r]
+
+
     def pull(self, action):
         if random.random() < self.prob[action]:
             reward = 1.0

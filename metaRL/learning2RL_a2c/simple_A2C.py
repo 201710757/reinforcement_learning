@@ -53,7 +53,7 @@ def train():
             #rnn_state = rnn_state[0].detach(), rnn_state[1].detach()
         #else:
         rnn_state = policy.init_lstm_state()
-        if ep % 10 == 0:
+        if ep % 100 == 0:
             env = MAB(k)
             #print('prob : ', env.prob)
 
