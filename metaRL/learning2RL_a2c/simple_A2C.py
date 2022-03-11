@@ -67,6 +67,8 @@ def train():
                     ),
                     rnn_state
                 )
+            rnn_state = rnn_state[0].detach(), rnn_state[1].detach() 
+            # test version
             
             action_prob = F.softmax(action_pred, dim=-1)
             dist = Categorical(action_prob)
