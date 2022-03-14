@@ -119,7 +119,11 @@ def train():
 
         advantage = advantage.detach()
         returns = returns.detach()
+        
+        # actor loss
         action_loss = -(advantage * log_prob_actions).sum()
+        
+        # critic loss
         value_loss = F.smooth_l1_loss(state_values, returns).sum()
         
         loss = action_loss + value_loss
