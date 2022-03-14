@@ -85,6 +85,7 @@ def train():
             
             action_prob = F.softmax(action_pred, dim=-1)
             try:
+                #print(action_prob)
                 dist = Categorical(action_prob)
             except:
                 print(action_prob) 
