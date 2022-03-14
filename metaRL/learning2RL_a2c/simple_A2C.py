@@ -21,6 +21,11 @@ k = 2
 env = MAB(k)
 
 writer = SummaryWriter("runs/"+ env_name)
+import pandas as pd
+df = pd.DataFrame()
+
+prob_list = []
+prob_list.append(env.prob)
 
 input_dim = 3
 hidden_dim = 48
@@ -52,9 +57,11 @@ def train():
         #if d:
             #rnn_state = rnn_state[0].detach(), rnn_state[1].detach()
         #else:
-        rnn_state = policy.init_lstm_state()
+        #rnn_state = policy.init_lstm_state()
         if ep % 100 == 0:
+            rnn_state = policy.init_lstm_state()
             env = MAB(k)
+            prob_list.append(env.prob)
             #print('prob : ', env.prob)
             #writer.add_hparams({'ep':int(ep/100), 'prob1':env.prob[0], 'prob2':env.prob[1]})
         d = False
@@ -77,7 +84,10 @@ def train():
             # test version
             
             action_prob = F.softmax(action_pred, dim=-1)
-            dist = Categorical(action_prob)
+            try:
+                dist = Categorical(action_prob)
+            except:
+                print(action_prob) 
             action = dist.sample()
             a = action.item()
 
@@ -123,6 +133,8 @@ def train():
         
         writer.add_scalar("Model ep reward", ep_reward, ep)
 
+        df = pd.DataFrame(np.array(prob_list))
+        df.to_csv('prob_list.csv')
         #if ep % 10 == 0:
         #    print("MODEL{} - EP : {} | Mean Reward : {}".format("A2C", ep, np.mean(train_reward[-10:])))
 
@@ -133,4 +145,5 @@ def init_weights(m):
 
 
 train()
-
+df = pd.DataFrame(np.array(prob_list))
+df.to_csv('prob_list.csv')
