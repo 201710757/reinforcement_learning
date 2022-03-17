@@ -16,7 +16,7 @@ import torch.multiprocessing as mp
 
 import time
 device = torch.device("cuda:0")
-env_name = 'Multi_Armed_Bandit_' + time.ctime(time.time())
+env_name = 'GAE_Multi_Armed_Bandit_' + time.ctime(time.time())
 k = 2
 env = MAB(k)
 
