@@ -31,7 +31,7 @@ input_dim = 3
 hidden_dim = 48
 output_dim = k
 LR = 1e-3
-MAX_EP = 40001
+MAX_EP = 10001
 GAMMA = 0.99
 
 def train():

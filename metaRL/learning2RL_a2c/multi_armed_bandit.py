@@ -11,7 +11,7 @@ class MAB:
         #self.prob = m(torch.tensor([r, 1-r])).numpy()
         
         r = round(torch.empty(1).uniform_(0,1).item(), 2)
-        self.prob = [r, 1-r]
+        self.prob = [round(r, 2), round(1-r, 2)]
 
 
     def pull(self, action):

@@ -16,7 +16,7 @@ import torch.multiprocessing as mp
 
 import time
 device = torch.device("cuda:0")
-env_name = 'A2C_Multi_Armed_Bandit_' + time.ctime(time.time())
+env_name = 'test_mse_A2C_Multi_Armed_Bandit_' + time.ctime(time.time())
 k = 2
 env = MAB(k)
 
@@ -31,7 +31,7 @@ input_dim = 3
 hidden_dim = 48
 output_dim = k
 LR = 1e-3
-MAX_EP = 40001
+MAX_EP = 10001
 GAMMA = 0.99
 
 def train():
@@ -54,16 +54,11 @@ def train():
 
         step = 0
         
-        #if d:
-            #rnn_state = rnn_state[0].detach(), rnn_state[1].detach()
-        #else:
-        #rnn_state = policy.init_lstm_state()
         if ep % 100 == 0:
             rnn_state = policy.init_lstm_state()
             env = MAB(k)
             prob_list.append(env.prob)
-            #print('prob : ', env.prob)
-            #writer.add_hparams({'ep':int(ep/100), 'prob1':env.prob[0], 'prob2':env.prob[1]})
+        
         d = False
         while not d:
             if step == 100:
@@ -88,11 +83,14 @@ def train():
                 #print(action_prob)
                 dist = Categorical(action_prob)
             except:
+                print("---PRED---")
+                print(action_pred)
+                print("---PROB---")
                 print(action_prob) 
             action = dist.sample()
             a = action.item()
 
-            r = env.pull(a)
+            r = env.pull(a) + 1e-5
             p_action = np.eye(k)[a]
             p_reward = r
             log_prob_actions.append(dist.log_prob(action))
@@ -124,7 +122,7 @@ def train():
         action_loss = -(advantage * log_prob_actions).sum()
         
         # critic loss
-        value_loss = F.smooth_l1_loss(state_values, returns).sum()
+        value_loss = F.mse_loss(state_values, returns).sum()
         
         loss = action_loss + value_loss
 
