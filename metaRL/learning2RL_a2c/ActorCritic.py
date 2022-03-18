@@ -10,7 +10,7 @@ class ActorCritic(nn.Module):
         super(ActorCritic, self).__init__()
         
         #self.encoder = nn.Linear(input_dim, hidden_dim)
-        self.lstm = nn.LSTM(input_dim+2+1, hidden_dim)
+        self.lstm = nn.LSTM(input_dim+2+2+1, hidden_dim)
 
         # Actor
         self.action_layer = nn.Linear(hidden_dim, output_dim)
