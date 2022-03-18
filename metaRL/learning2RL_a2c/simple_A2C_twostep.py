@@ -71,7 +71,7 @@ def train():
         
         d = False
         while not d:
-            r = r + 1e-5
+            #r = r + 1
             if step == 100:
                 d = True
             step += 1
@@ -124,10 +124,10 @@ def train():
             R = r + GAMMA*R
             returns.insert(0, R)
         returns = torch.tensor(returns).float().to(device)
-        returns = (returns - returns.mean()) / returns.std()
+        #returns = (returns - returns.mean()) / (returns.std()+)
         
         advantage = returns - state_values
-        advantage = (advantage - advantage.mean()) / advantage.std()
+        #advantage = (advantage - advantage.mean()) / advantage.std()
 
         advantage = advantage.detach()
         returns = returns.detach()
