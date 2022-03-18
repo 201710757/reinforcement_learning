@@ -61,7 +61,7 @@ def train():
 
         step = 0
         
-        if ep % 100 == 0:
+        if ep % 10 == 0:
             rnn_state = policy.init_lstm_state()
             env = two_step_task()#MAB(k)
             if env.state == env.S_1:
@@ -76,7 +76,7 @@ def train():
                 d = True
             step += 1
             #print(s, a, r, t)
-            s = np.concatenate([s,[r],[t]]) #s + a + [r] + [t]#[s, a, r, step/100.0]
+            s = np.concatenate([s,[t]]) #s + a + [r] + [t]#[s, a, r, step/100.0]
             s = torch.FloatTensor(s).to(device)#.unsqueeze(0)
             state_pred, action_pred, rnn_state = policy(
                     s,
@@ -115,6 +115,7 @@ def train():
             
         #if ep % 10 == 0:
         print(" ep {} - reward {} ".format(ep, ep_reward))
+        
         log_prob_actions = torch.cat(log_prob_actions).to(device)
         state_values = torch.cat(state_values).squeeze(-1).to(device)
 
@@ -147,7 +148,9 @@ def train():
         optimizer.step()
 
         train_reward.append(ep_reward)
-        
+        if ep % 10 == 0:
+            writer.add_scalar("10 ep mean reward", np.mean(train_reward), ep)
+            train_reward = []
         writer.add_scalar("Model ep reward", ep_reward, ep)
 
         #df = pd.DataFrame(np.array(prob_list))
