@@ -124,7 +124,7 @@ class two_step_task():
             # get probability of reward in stage
             r_prob = 0.9 if (self.highest_reward_second_stage == self.state) else 0.1
             # get reward
-            reward = 1 if np.random.uniform() < r_prob else 0
+            reward = 10 if np.random.uniform() < r_prob else 0
             # update stage
             self.state = self.S_1
             # book-keeping for plotting
