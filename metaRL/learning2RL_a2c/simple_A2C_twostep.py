@@ -29,7 +29,7 @@ input_dim = env.nb_states
 hidden_dim = 48
 output_dim = env.num_actions
 LR = 1e-3
-MAX_EP = 10001
+MAX_EP = 30001
 GAMMA = 0.99
 
 def train():
