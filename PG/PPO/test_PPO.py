@@ -13,25 +13,25 @@ from ActorCritic import ActorCritic
 import torch.multiprocessing as mp
 
 device = torch.device("cuda:0")
-env_name = 'LunarLander-v2'
+env_name = 'CartPole-v1'
 env = gym.make(env_name)
 
 writer = SummaryWriter("runs/"+ env_name + "_" + time.ctime(time.time()))
 
 input_dim = env.observation_space.shape[0]
-hidden_dim = 512
+hidden_dim = 1024
 output_dim = env.action_space.n
-LR = 0.0001
-MAX_EP = 10000
-GAMMA = 0.99
+LR = 0.0005
+MAX_EP = 5000
+GAMMA = 0.98
 ppo_steps = 5
 ppo_clip = 0.1
-lmbda = 0.98
+lmbda = 0.95
 
 
 def train():
     policy = ActorCritic(input_dim, hidden_dim, output_dim).to(device)
-    policy.apply(init_weights)    
+    
     optimizer = optim.Adam(policy.parameters(), lr = LR)
 
     train_reward = []
@@ -39,6 +39,7 @@ def train():
         ep_reward = 0
 
         log_prob_actions = []
+        # state_values = []
         rewards = []
         states = []
         actions = []
@@ -88,6 +89,9 @@ def train():
             next_value = v
             advantages.insert(0, advantage)
         advantages = torch.tensor(advantages).float().to(device)
+        '''
+        advantages = returns - values
+        '''
         advantages = (advantages - advantages.mean()) / advantages.std()
         
 
@@ -99,7 +103,7 @@ def train():
         
         for _ in range(ppo_steps):
             s_p, a_p = policy(states)
-            s_p = s_p.squeeze(-1)
+            s_p = s_p.squeeze(-1)#.reshape(-1)#.squeeze(-1)
             a_p = F.softmax(a_p, dim=-1)
             dist = Categorical(a_p)
 
@@ -110,10 +114,12 @@ def train():
             policy_loss_2 = torch.clamp(policy_ratio, min=1.0-ppo_clip, max=1.0+ppo_clip) * advantages
 
             policy_loss = -torch.min(policy_loss_1, policy_loss_2).mean()
+            #print(policy_loss_1.shape)
             value_loss = F.smooth_l1_loss(returns.unsqueeze(0), s_p).mean()
             
             loss = policy_loss + value_loss
             optimizer.zero_grad()
+            #policy_loss.backward(retain_graph=True)
             loss.backward()
             optimizer.step()
 

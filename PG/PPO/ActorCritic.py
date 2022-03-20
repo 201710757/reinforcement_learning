@@ -21,10 +21,9 @@ class ActorCritic(nn.Module):
     def forward(self, state):
         state = self.affine(state)
         
-
-        state_value = self.value_layer(state)
+        state_value = self.value_layer(F.relu(state))
         
-        action_value = self.action_layer(state)
+        action_value = self.action_layer(F.relu(state))
 
         return state_value, action_value
 
