@@ -16,20 +16,21 @@ device = torch.device("cuda:0")
 env_name = 'LunarLander-v2'
 env = gym.make(env_name)
 
-writer = SummaryWriter("runs/"+ env_name)
+writer = SummaryWriter("runs/"+ env_name + "_" + time.ctime(time.time()))
 
 input_dim = env.observation_space.shape[0]
 hidden_dim = 1024
 output_dim = env.action_space.n
-LR = 1e-3
+LR = 0.0005
 MAX_EP = 5000
 GAMMA = 0.99
+ppo_steps = 5
+ppo_clip = 0.2
 
-lmbda = 0.95
-eps_clip = 0.1
 
 def train():
     policy = ActorCritic(input_dim, hidden_dim, output_dim).to(device)
+    
     optimizer = optim.Adam(policy.parameters(), lr = LR)
 
     train_reward = []
@@ -37,78 +38,90 @@ def train():
         ep_reward = 0
 
         log_prob_actions = []
-        state_values = []
-        state_prime_values = []
+        # state_values = []
         rewards = []
-        state_sample = []
-        action_sample = []
+        states = []
+        actions = []
+        values = []
 
         d = False
         
         s = env.reset()
         while not d:
             s = torch.FloatTensor(s).to(device).unsqueeze(0)
-            state_sample.append(s)
+            states.append(s)
 
             state_pred, action_pred = policy(s)
             action_prob = F.softmax(action_pred, dim=-1)
             dist = Categorical(action_prob)
             action = dist.sample()
-            action_sample.append(action.item())
 
-            s_p, r, d, _ = env.step(action.item())
+            s, r, d, _ = env.step(action.item())
             
+            actions.append(action)
             log_prob_actions.append(dist.log_prob(action))
-            state_values.append(state_pred)
-            state_prime_values.append(policy(torch.FloatTensor(s_p).to(device).unsqueeze(0))[0])
+            values.append(state_pred)
             rewards.append(r)
-            
+
             ep_reward += r
-            s = s_p
 
+        states = torch.cat(states).unsqueeze(0).to(device)
+        actions = torch.cat(actions).unsqueeze(0).to(device)
         log_prob_actions = torch.cat(log_prob_actions).to(device)
-        state_values = torch.cat(state_values).squeeze(-1).to(device)
-        state_prime_values = torch.cat(state_prime_values).squeeze(-1).to(device)
+        values = torch.cat(values).squeeze(-1).to(device)
 
-        rewards = torch.tensor(rewards).float().to(device)
-        state_sample = torch.cat(state_sample).squeeze(-1).to(device)
+        returns = []
+        R = 0
+        for r in reversed(rewards):
+            R = r + GAMMA*R
+            returns.insert(0, R)
+        returns = torch.tensor(returns).float().to(device)
+        returns = (returns - returns.mean()) / returns.std()
+        
 
-        td_target = rewards + GAMMA * state_prime_values
-        delta = td_target - state_values
-
-        advantage_list = []
+        advantages = []
         advantage = 0
-        for delta_t in reversed(delta):
-            advantage = GAMMA * lmbda * advantage + delta_t[0].item()
-            advantage_list.insert(0, advantage)
-        advantage = torch.tensor(advantage_list).float().to(device)
+        next_value = 0
+
+        for r, v in zip(reversed(rewards), reversed(values)):
+            td_err = r + next_value * 0.99 - v
+            advantage = td_err + advantage * 0.99 * 0.99
+            next_value = v
+            advantages.insert(0, advantage)
+        advantages = torch.tensor(advantages).float().to(device)
+        '''
+        advantages = returns - values
+        '''
+        advantages = (advantages - advantages.mean()) / advantages.std()
         
-        advantage = advantage.detach()
-        #returns = returns.detach()
+
+        states = states.detach()
+        actions = actions.detach()
+        log_prob_actions = log_prob_actions.detach()
+        advantages = advantages.detach()
+        returns = returns.detach()
         
-        pi, _ = policy(state_sample)
-        pi_a = pi.gather(1, action_sample)
-        ratio = torch.exp(torch.log(pi_a) - torch.log(log_prob_actions))
+        for _ in range(ppo_steps):
+            s_p, a_p = policy(states)
+            s_p = s_p.squeeze(-1)#.reshape(-1)#.squeeze(-1)
+            a_p = F.softmax(a_p, dim=-1)
+            dist = Categorical(a_p)
 
-        surr1 = ratio * advantage
-        surr2 = torch.clamp(ratio, 1-eps_clip, 1+eps_clip) * advantage
-        loss = -torch.min(surr1, surr2) + F.smooth_l1_loss(policy(torch.FloatTensor(state_sample).to(device).unsqueeze(0))[0], td_target.detach())
+            new_log_prob_actions = dist.log_prob(actions)
 
+            policy_ratio = (new_log_prob_actions - log_prob_actions).exp()
+            policy_loss_1 = policy_ratio * advantages
+            policy_loss_2 = torch.clamp(policy_ratio, min=1.0-ppo_clip, max=1.0+ppo_clip) * advantages
 
-
-
-
-
-        #action_loss = -(advantage * log_prob_actions).sum()
-        #value_loss = F.smooth_l1_loss(state_values, returns).sum()
-        
-        #loss = action_loss + value_loss
-
-        optimizer.zero_grad()
-
-        loss.backward()
-
-        optimizer.step()
+            policy_loss = -torch.min(policy_loss_1, policy_loss_2).mean()
+            #print(policy_loss_1.shape)
+            value_loss = F.smooth_l1_loss(returns.unsqueeze(0), s_p).mean()
+            
+            loss = policy_loss + value_loss
+            optimizer.zero_grad()
+            #policy_loss.backward(retain_graph=True)
+            loss.backward()
+            optimizer.step()
 
         train_reward.append(ep_reward)
         
@@ -116,7 +129,7 @@ def train():
             writer.add_scalar("Model - Average 10 steps", np.mean(train_reward[-10:]), ep)
 
         if ep % 10 == 0:
-            print("MODEL{} - EP : {} | Mean Reward : {}".format("A2C", ep, np.mean(train_reward[-10:])))
+            print("MODEL{} - EP : {} | Mean Reward : {}".format(" PPO", ep, np.mean(train_reward[-10:])))
 
 def init_weights(m):
         if type(m) == nn.Linear:
