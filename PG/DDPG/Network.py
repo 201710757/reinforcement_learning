@@ -11,8 +11,8 @@ class Mu(nn.Module):
         self.input_dim = input_dim
         self.output_dim = output_dim
 
-        self.fc1 = nn.Linear(self.input_dim, 128)
-        self.fc2 = nn.Linear(128, 64)
+        self.fc1 = nn.Linear(self.input_dim, 1024)
+        self.fc2 = nn.Linear(1024, 64)
         self.mu = nn.Linear(64, self.output_dim)
 
     def forward(self, x):
@@ -31,9 +31,9 @@ class Q(nn.Module):
 
         self.input_dim = input_dim
 
-        self.fc_s = nn.Linear(self.input_dim, 64)
-        self.fc_a = nn.Linear(1, 64)
-        self.fc_Q = nn.Linear(128, 32)
+        self.fc_s = nn.Linear(self.input_dim, 512)
+        self.fc_a = nn.Linear(1, 512)
+        self.fc_Q = nn.Linear(1024, 32)
         self.out = nn.Linear(32, 1)
 
     def forward(self, s, a):

@@ -10,27 +10,32 @@ from Network import Q, Mu
 from OrnsteinUhlenbeckNoise import OrnsteinUhlenbeckNoise
 from ReplayBuffer import ReplayBuffer
 
+from torch.utils.tensorboard import SummaryWriter
+import time
 
 device = torch.device("cuda:0")
+
+
 LR_Q = 0.001
 LR_Mu = 0.0005
 GAMMA = 0.99
 tau = 0.005
 MAX_STEPS = 10000
-batch_size = 32
+batch_size = 64
 UPDATE_SIZE = 2000
 SOFT_UPDATE_TERM = 10
 
 def train(mu, mu_target, q, q_target, memory, q_optim, mu_optim):
     s, a, r, sp, d = memory.sample(batch_size)
-    #print(sp)
-    target = r + GAMMA * q_target(sp, torch.argmax(mu_target(sp), dim=1, keepdim=True).float()) * d
+    #target = r + GAMMA * q_target(sp, torch.argmax(mu_target(sp), dim=1, keepdim=True).float()) * d
+    target = r + GAMMA * q_target(sp,mu_target(sp)) * d
     critic_loss = F.mse_loss(target.detach(), q(s, a))
     q_optim.zero_grad()
     critic_loss.backward()
     q_optim.step()
 
-    actor_loss = -q(s, torch.argmax(mu(s), dim=1, keepdim=True).float()).mean()
+    #actor_loss = -q(s, torch.argmax(mu(s), dim=1, keepdim=True).float()).mean()
+    actor_loss = -q(s, mu(s)).mean()
     mu_optim.zero_grad()
     actor_loss.backward()
     mu_optim.step()
@@ -40,11 +45,13 @@ def soft_update(net, net_grad):
         p_t.data.copy_(tau * p.data + (1.0 - tau) * p_t.data)
 
 def main():
-    env_name = 'CartPole-v1'
+    env_name = 'Pendulum-v0'
+    writer = SummaryWriter("runs/"+ env_name + "_" + time.ctime(time.time()))
+
     env = gym.make(env_name)
 
     input_dim = env.observation_space.shape[0]
-    output_dim = env.action_space.n
+    output_dim = 1#env.action_space.n
     memory = ReplayBuffer()
 
     q, q_target = Q(input_dim).to(device), Q(input_dim).to(device)
@@ -61,15 +68,15 @@ def main():
     for ep in range(MAX_STEPS):
         s = env.reset()
         d = False
-
+        r = 0
         while not d:
             a = mu(torch.FloatTensor(s).to(device))
             noise = N()[0]
-            #print(a, noise)
-            a = torch.argmax(a * noise)#N()[0]
+            #a = torch.argmax(a * noise)#N()[0]
+            a = a.item() + noise
             #print(a)
-            sp, r, d, _ = env.step(a.item())
-            memory.put((s, a, r/100.0, sp, d))
+            sp, r, d, _ = env.step([a])
+            memory.put((s, a, (r+8)/8, sp, d))
             
             total_score += r
             
@@ -82,6 +89,7 @@ def main():
                 soft_update(q, q_target)
 
         if ep % 10 == 0 and ep != 0:
+            writer.add_scalar("Model - Average 10 steps", total_score/10, ep)
             print("{} EP | REWARD : {}".format(ep, total_score/10))
             total_score = 0
 
