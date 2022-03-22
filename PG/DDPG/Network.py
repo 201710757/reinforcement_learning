@@ -19,7 +19,7 @@ class Mu(nn.Module):
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         m = torch.tanh(self.mu(x))
-
+        
         return m
 
 
@@ -34,12 +34,12 @@ class Q(nn.Module):
         self.fc_s = nn.Linear(self.input_dim, 64)
         self.fc_a = nn.Linear(1, 64)
         self.fc_Q = nn.Linear(128, 32)
-        self.out = nn.Linear(32, self.output_dim)
+        self.out = nn.Linear(32, 1)
 
     def forward(self, s, a):
         _s = F.relu(self.fc_s(s))
         _a = F.relu(self.fc_a(a))
-        sa = torch.cat([h1, h2], dim=1)
+        sa = torch.cat([_s, _a], dim=1)
 
         Q = F.relu(self.fc_Q(sa))
         Q = self.out(Q)

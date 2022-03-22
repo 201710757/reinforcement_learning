@@ -23,7 +23,7 @@ class ReplayBuffer():
             sp.append(_sp)
             d.append([0.0 if _d else 1.0])
 
-        return torch.tensor(s, dtype=torch.float).to(device), torch.tensor(a, dtype=torch.float), torch.tensor(r, dtype=torch.float), torch.tensor(sp, dtype=torch.float), torch.tensor(d, dtype=torch.float)
+        return torch.tensor(s, dtype=torch.float).to(device), torch.tensor(a, dtype=torch.float).to(device), torch.tensor(r, dtype=torch.float).to(device), torch.tensor(sp, dtype=torch.float).to(device), torch.tensor(d, dtype=torch.float).to(device)
 
     def size(self):
         return len(self.buffer)
