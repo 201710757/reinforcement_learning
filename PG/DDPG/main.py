@@ -18,23 +18,25 @@ GAMMA = 0.99
 tau = 0.005
 MAX_STEPS = 10000
 batch_size = 32
+UPDATE_SIZE = 2000
+SOFT_UPDATE_TERM = 10
 
 def train(mu, mu_target, q, q_target, memory, q_optim, mu_optim):
     s, a, r, sp, d = memory.sample(batch_size)
-
-    target = r + GAMMA * q_target(sp, mu_target(sp)) * d
+    #print(sp)
+    target = r + GAMMA * q_target(sp, torch.argmax(mu_target(sp), dim=1, keepdim=True).float()) * d
     critic_loss = F.mse_loss(target.detach(), q(s, a))
     q_optim.zero_grad()
     critic_loss.backward()
     q_optim.step()
 
-    actor_loss = -q(s, mu(s)).mean()
+    actor_loss = -q(s, torch.argmax(mu(s), dim=1, keepdim=True).float()).mean()
     mu_optim.zero_grad()
     actor_loss.backward()
     mu_optim.step()
 
 def soft_update(net, net_grad):
-    for p_t, p in zip(net_target.parameters(), net.parameters()):
+    for p_t, p in zip(net_grad.parameters(), net.parameters()):
         p_t.data.copy_(tau * p.data + (1.0 - tau) * p_t.data)
 
 def main():
@@ -42,11 +44,11 @@ def main():
     env = gym.make(env_name)
 
     input_dim = env.observation_space.shape[0]
-
+    output_dim = env.action_space.n
     memory = ReplayBuffer()
 
     q, q_target = Q(input_dim).to(device), Q(input_dim).to(device)
-    mu, mu_target = Mu(input_dim).to(device), Mu(input_dim).to(device)
+    mu, mu_target = Mu(input_dim, output_dim).to(device), Mu(input_dim, output_dim).to(device)
 
     q_target.load_state_dict(q.state_dict())
     mu_target.load_state_dict(mu.state_dict())
@@ -63,10 +65,10 @@ def main():
         while not d:
             a = mu(torch.FloatTensor(s).to(device))
             noise = N()[0]
-            print(a, noise)
-            a = a.item() + noise#N()[0]
-            
-            sp, r, d, _ = env.step([a])
+            #print(a, noise)
+            a = torch.argmax(a * noise)#N()[0]
+            #print(a)
+            sp, r, d, _ = env.step(a.item())
             memory.put((s, a, r/100.0, sp, d))
             
             total_score += r
@@ -80,8 +82,8 @@ def main():
                 soft_update(q, q_target)
 
         if ep % 10 == 0 and ep != 0:
-            print("{} EP | REWARD : {}".format(ep, score/10))
-            score = 0
+            print("{} EP | REWARD : {}".format(ep, total_score/10))
+            total_score = 0
 
 main()
 
