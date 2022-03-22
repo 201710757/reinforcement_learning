@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-
+import torch.nn.functional as F
 
 device = torch.device("cuda:0")
 
@@ -25,15 +25,16 @@ class Mu(nn.Module):
 
 
 class Q(nn.Module):
-    def __init__(self, input_dim):
+    def __init__(self, input_dim, output_dim):
         super(Q, self).__init__()
 
         self.input_dim = input_dim
+        self.output_dim = output_dim
 
         self.fc_s = nn.Linear(self.input_dim, 64)
         self.fc_a = nn.Linear(1, 64)
         self.fc_Q = nn.Linear(128, 32)
-        self.out = nn.Linear(32, 1)
+        self.out = nn.Linear(32, self.output_dim)
 
     def forward(self, s, a):
         _s = F.relu(self.fc_s(s))
