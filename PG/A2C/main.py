@@ -12,15 +12,15 @@ from ParallelEnv import ParallelEnv
 
 device = torch.device("cuda")
 
-n_train_processes = 8
+n_train_processes = 16
 learning_rate = 0.0002
-update_interval = 5
+update_interval = 20
 gamma = 0.98
-max_train_steps = 60000
+max_train_steps = 1000000
 PRINT_INTERVAL = update_interval * 100
-hidden_dim = 256
+hidden_dim = 1024
 
-env_name = 'CartPole-v1'
+env_name = 'LunarLander-v2'#'CartPole-v1'
 
 def test(step_idx, model):
     
@@ -51,13 +51,12 @@ def compute_target(v_final, r_lst, mask_lst):
     for r, mask in zip(r_lst[::-1], mask_lst[::-1]):
         G = r + gamma * G * mask
         td_target.append(G)
-
     return torch.FloatTensor(td_target[::-1]).to(device)
 
 if __name__ == '__main__':
-    envs = ParallelEnv(n_train_processes)
+    envs = ParallelEnv(n_train_processes, env_name)
     
-    env = gym.make('CartPole-v1')
+    env = gym.make(env_name)
     input_dim = env.observation_space.shape[0]
     output_dim = env.action_space.n
     
@@ -76,7 +75,7 @@ if __name__ == '__main__':
 
             s_lst.append(s)
             a_lst.append(a)
-            r_lst.append(r/100.0)
+            r_lst.append(r)
             mask_lst.append(1-d)
 
             s = s_p

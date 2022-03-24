@@ -4,7 +4,8 @@ import gym
 
 
 class ParallelEnv:
-    def __init__(self, n_train_processes):
+    def __init__(self, n_train_processes, env_name):
+        self.env_name = env_name
         self.nenvs = n_train_processes
         self.waiting = False
         self.closed = False
@@ -18,10 +19,10 @@ class ParallelEnv:
             p.daemon = True
             p.start()
             self.workers.append(p)
-
+        
         for worker_end in worker_ends:
             worker_end.close()
-
+        print("workerLen : ", len(self.workers))
     def step_async(self, actions):
         for master_end, action in zip(self.master_ends, actions):
             master_end.send(('step', action))
@@ -58,7 +59,7 @@ class ParallelEnv:
 
     def worker(self, worker_id, master_end, worker_end):
         master_end.close()
-        env = gym.make('CartPole-v1')
+        env = gym.make(self.env_name)#'CartPole-v1')
         env.seed(worker_id)
 
         while True:
