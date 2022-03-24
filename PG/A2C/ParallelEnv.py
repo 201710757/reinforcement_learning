@@ -12,9 +12,9 @@ class ParallelEnv:
 
         master_ends, worker_ends = zip(*[mp.Pipe() for _ in range(self.nenvs)])
         self.master_ends, self.worker_ends = master_ends, worker_ends
-
+        
         for worker_id, (master_end, worker_end) in enumerate(zip(master_ends, worker_ends)):
-            p = mp.Process(target = worker, args = (worker_id, master_end, worker_end))
+            p = mp.Process(target = self.worker, args = (worker_id, master_end, worker_end))
             p.daemon = True
             p.start()
             self.workers.append(p)
@@ -40,6 +40,7 @@ class ParallelEnv:
         return np.stack([master_end.recv() for master_end in self.master_ends])
 
     def step(self, actions):
+        #print(actions)
         self.step_async(actions)
         return self.step_wait()
 
@@ -55,30 +56,30 @@ class ParallelEnv:
             worker.join()
             self.closed = True
 
-def worker(worker_id, master_end, worker_end):
-    master_end.close()
-    env = gym.make('CartPole-v1')
-    env.seed(worker_id)
+    def worker(self, worker_id, master_end, worker_end):
+        master_end.close()
+        env = gym.make('CartPole-v1')
+        env.seed(worker_id)
 
-    while True:
-        cmd, data = worker_end.recv()
-        if cmd == 'step':
-            ob, reward, done, info = env.step(data)
-            if done:
+        while True:
+            cmd, data = worker_end.recv()
+            if cmd == 'step':
+                ob, reward, done, info = env.step(data)
+                if done:
+                    ob = env.reset()
+                worker_end.send((ob, reward, done, info))
+            elif cmd == 'reset':
                 ob = env.reset()
-            worker_end.send((ob, reward, done, info))
-        elif cmd == 'reset':
-            ob = env.reset()
-            worker_end.send(ob)
-        elif cmd == 'reset_task':
-            ob = env.reset_task()
-            worker_end.send(ob)
-        elif cmd == 'close':
-            worker_end.close()
-            break
-        elif cmd == 'get_spaces':
-            worker_end.send((env.observation_space, env.action_space))
-        else:
-            raise NotImplementedError
+                worker_end.send(ob)
+            elif cmd == 'reset_task':
+                ob = env.reset_task()
+                worker_end.send(ob)
+            elif cmd == 'close':
+                worker_end.close()
+                break
+            elif cmd == 'get_spaces':
+                worker_end.send((env.observation_space, env.action_space))
+            else:
+                raise NotImplementedError
 
 
