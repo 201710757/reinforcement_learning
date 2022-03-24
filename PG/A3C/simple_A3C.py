@@ -95,7 +95,7 @@ def train(g_policy, model_num):
         train_reward.append(ep_reward)
         
         if ep % 10 == 0 and model_num == 0:
-            writer.add_scalar("Model - Average 10 steps", np.mean(train_reward[-100:]), ep)
+            writer.add_scalar("Model - Average 10 steps", np.mean(train_reward[-10:]), ep)
 
         if ep % 100 == 0:
             print("MODEL{} - EP : {} | Mean Reward : {}".format(model_num, ep, np.mean(train_reward[-100:])))
