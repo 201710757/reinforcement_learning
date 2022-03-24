@@ -17,25 +17,25 @@ device = torch.device("cuda:0")
 
 
 LR_Q = 0.001
-LR_Mu = 0.0005
+LR_Mu = 0.0001
 GAMMA = 0.99
-tau = 0.005
+tau = 0.001
 MAX_STEPS = 10000000
 batch_size = 128
 UPDATE_SIZE = 2000
-SOFT_UPDATE_TERM = 10
+SOFT_UPDATE_TERM = 5
 
 def train(mu, mu_target, q, q_target, memory, q_optim, mu_optim):
     s, a, r, sp, d = memory.sample(batch_size)
-    target = r + GAMMA * q_target(sp, torch.argmax(mu_target(sp), dim=1, keepdim=True).float()) * d
-    #target = r + GAMMA * q_target(sp,mu_target(sp)) * d
+    #target = r + GAMMA * q_target(sp, torch.argmax(mu_target(sp), dim=1, keepdim=True).float()) * d
+    target = r + GAMMA * q_target(sp,mu_target(sp)) * d
     critic_loss = F.mse_loss(target.detach(), q(s, a))
     q_optim.zero_grad()
     critic_loss.backward()
     q_optim.step()
 
-    actor_loss = -q(s, torch.argmax(mu(s), dim=1, keepdim=True).float()).mean()
-    #actor_loss = -q(s, mu(s)).mean()
+    #actor_loss = -q(s, torch.argmax(mu(s), dim=1, keepdim=True).float()).mean()
+    actor_loss = -q(s, mu(s)).mean()
     mu_optim.zero_grad()
     actor_loss.backward()
     mu_optim.step()
@@ -54,7 +54,7 @@ def main():
     output_dim = env.action_space.shape[0]#env.action_space.n
     memory = ReplayBuffer()
 
-    q, q_target = Q(input_dim).to(device), Q(input_dim).to(device)
+    q, q_target = Q(input_dim, output_dim).to(device), Q(input_dim, output_dim).to(device)
     mu, mu_target = Mu(input_dim, output_dim).to(device), Mu(input_dim, output_dim).to(device)
 
     q_target.load_state_dict(q.state_dict())
@@ -62,7 +62,7 @@ def main():
 
     q_optim = optim.Adam(q.parameters(), lr = LR_Q)
     mu_optim = optim.Adam(mu.parameters(), lr = LR_Mu)
-    N = OrnsteinUhlenbeckNoise(mu=np.zeros(1))
+    N = OrnsteinUhlenbeckNoise(mu=np.zeros(output_dim))
 
     total_score = 0
     for ep in range(MAX_STEPS):
@@ -71,12 +71,16 @@ def main():
         r = 0
         while not d:
             a = mu(torch.FloatTensor(s).to(device))
-            noise = N()[0]
-            a = torch.argmax(a * noise).item()#N()[0]
+            noise = torch.FloatTensor(N()).to(device)
+            #a = torch.argmax(a * noise).item()#N()[0]
             #print(a)
-            #a = a.item() + noise
             #print(a)
-            sp, r, d, _ = env.step([a])
+            #print(noise)
+            a = a + noise
+            a = np.clip(a.detach().cpu().numpy(), -1, 1)
+            #print(a)
+
+            sp, r, d, _ = env.step(a)
             memory.put((s, a, r, sp, d))
             
             total_score += r

@@ -18,11 +18,10 @@ class ReplayBuffer():
         for transition in minibatch:
             _s, _a, _r, _sp, _d = transition
             s.append(_s)
-            a.append([_a])
+            a.append(_a)
             r.append([_r])
             sp.append(_sp)
             d.append([0.0 if _d else 1.0])
-
         return torch.tensor(s, dtype=torch.float).to(device), torch.tensor(a, dtype=torch.float).to(device), torch.tensor(r, dtype=torch.float).to(device), torch.tensor(sp, dtype=torch.float).to(device), torch.tensor(d, dtype=torch.float).to(device)
 
     def size(self):

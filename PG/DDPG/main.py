@@ -27,15 +27,16 @@ SOFT_UPDATE_TERM = 10
 
 def train(mu, mu_target, q, q_target, memory, q_optim, mu_optim):
     s, a, r, sp, d = memory.sample(batch_size)
-    #target = r + GAMMA * q_target(sp, torch.argmax(mu_target(sp), dim=1, keepdim=True).float()) * d
+    
     target = r + GAMMA * q_target(sp,mu_target(sp)) * d
     critic_loss = F.mse_loss(target.detach(), q(s, a))
+    
     q_optim.zero_grad()
     critic_loss.backward()
     q_optim.step()
 
-    #actor_loss = -q(s, torch.argmax(mu(s), dim=1, keepdim=True).float()).mean()
     actor_loss = -q(s, mu(s)).mean()
+    
     mu_optim.zero_grad()
     actor_loss.backward()
     mu_optim.step()

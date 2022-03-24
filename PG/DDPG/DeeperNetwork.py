@@ -32,16 +32,16 @@ class Mu(nn.Module):
 
 
 class Q(nn.Module):
-    def __init__(self, input_dim):
+    def __init__(self, input_dim, output_dim):
         super(Q, self).__init__()
 
         self.input_dim = input_dim
-
+        self.output_dim = output_dim
         
         self.fc_s = nn.Linear(self.input_dim, 1024)
         # = nn.BatchNorm1d(512)
         
-        self.fc_a = nn.Linear(1, 256)
+        self.fc_a = nn.Linear(self.output_dim, 256)
         # = nn.BatchNorm1d(256)
         self.fc_a1 = nn.Linear(256,1024)
         # = nn.BatchNorm1d(512)

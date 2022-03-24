@@ -18,8 +18,8 @@ class Mu(nn.Module):
     def forward(self, x):
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        m = torch.tanh(self.mu(x))
         
+        m = torch.tanh(self.mu(x))
         return m
 
 
