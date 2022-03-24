@@ -6,22 +6,25 @@ import torch.optim as optim
 from torch.distributions import Categorical
 import torch.multiprocessing as mp
 import numpy as np
+from torch.utils.tensorboard import SummaryWriter
+import time
+
 
 from ActorCritic import ActorCritic
 from ParallelEnv import ParallelEnv
 
 device = torch.device("cuda")
 
-n_train_processes = 16
+n_train_processes = 3
 learning_rate = 0.0002
-update_interval = 20
+update_interval = 10
 gamma = 0.98
 max_train_steps = 1000000
-PRINT_INTERVAL = update_interval * 100
+PRINT_INTERVAL = update_interval * 10
 hidden_dim = 1024
 
 env_name = 'LunarLander-v2'#'CartPole-v1'
-
+writer = SummaryWriter("runs/"+ env_name+"_"+time.ctime(time.time()))
 def test(step_idx, model):
     
     env = gym.make(env_name)
@@ -41,6 +44,7 @@ def test(step_idx, model):
             score += r
         d = False
     print("{} score : {}".format(step_idx, score/freq))
+    writer.add_scalar("Model ep reward", score/freq, step_idx)
     env.close()
 
 
