@@ -31,7 +31,7 @@ input_dim = env.observation_space.n
 hidden_dim = 48
 output_dim = env.action_space.n
 LR = 1e-3
-MAX_EP = 50001
+MAX_EP = 10001
 GAMMA = 0.99
 
 def train():
