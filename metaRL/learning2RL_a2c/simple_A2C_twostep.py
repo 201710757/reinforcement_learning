@@ -4,7 +4,9 @@ import torch.optim as optim
 import torch.nn.functional as F
 from torch.distributions.categorical import Categorical
 from torch.utils.tensorboard import SummaryWriter
-from two import two_step_task
+#from two import CustomEnv
+from C_MDP import CustomEnv
+
 import time
 import matplotlib.pyplot as plt
 import numpy as np
@@ -18,16 +20,16 @@ import time
 device = torch.device("cuda:0")
 env_name = 'A2C_Two_Step_Task_' + time.ctime(time.time())
 k = 2
-env = two_step_task()
+env = CustomEnv()
 
 writer = SummaryWriter("runs/"+ env_name)
 import pandas as pd
 df = pd.DataFrame()
+ENV_RESET_TERM = 100
 
-
-input_dim = env.nb_states
+input_dim = env.observation_space.n
 hidden_dim = 48
-output_dim = env.num_actions
+output_dim = env.action_space.n
 LR = 1e-3
 MAX_EP = 30001
 GAMMA = 0.99
@@ -35,21 +37,13 @@ GAMMA = 0.99
 def train():
     policy = ActorCritic(input_dim, hidden_dim, output_dim).to(device)
     optimizer = optim.Adam(policy.parameters(), lr = LR)
-    env = two_step_task()
-    d = False
-    a = 0
-    r = 0
-    s = env.reset()
-    t = 0
-    if env.state == env.S_1:
-        env.possible_switch()
+    env = CustomEnv()
+    
     train_reward = []
     for ep in range(MAX_EP):
  
-        d = False
         a = [0]*output_dim
         r = 0
-        s = env.reset()
         t = 0
         ep_reward = 0
 
@@ -61,22 +55,18 @@ def train():
 
         step = 0
         
-        if ep % 10 == 0:
+        if ep % ENV_RESET_TERM == 0:
             rnn_state = policy.init_lstm_state()
-            env = two_step_task()#MAB(k)
-            if env.state == env.S_1:
-                env.possible_switch()
+            env = CustomEnv()#MAB(k)
 
             #prob_list.append(env.prob)
-        
+        s = env.reset()
         d = False
         while not d:
-            #r = r + 1
-            if step == 100:
-                d = True
             step += 1
             #print(s, a, r, t)
             s = np.concatenate([s,[t]]) #s + a + [r] + [t]#[s, a, r, step/100.0]
+            #print("STATE : ", s)
             s = torch.FloatTensor(s).to(device)#.unsqueeze(0)
             state_pred, action_pred, rnn_state = policy(
                     s,
@@ -112,9 +102,7 @@ def train():
             ep_reward += r
 
             s = s1
-            
-        #if ep % 10 == 0:
-        print(" ep {} - reward {} ".format(ep, ep_reward))
+        
         
         log_prob_actions = torch.cat(log_prob_actions).to(device)
         state_values = torch.cat(state_values).squeeze(-1).to(device)
@@ -147,16 +135,12 @@ def train():
 
         optimizer.step()
 
-        train_reward.append(ep_reward)
-        if ep % 10 == 0:
-            writer.add_scalar("10 ep mean reward", np.mean(train_reward), ep)
+        if ep % ENV_RESET_TERM == 0 and ep != 0:
+            print("ep {} - reward {}".format(ep, np.mean(train_reward)))
+            writer.add_scalar(str(ENV_RESET_TERM) +" ep mean reward", np.mean(train_reward), ep)
             train_reward = []
-        writer.add_scalar("Model ep reward", ep_reward, ep)
 
-        #df = pd.DataFrame(np.array(prob_list))
-        #df.to_csv('prob_list.csv')
-        #if ep % 10 == 0:
-        #    print("MODEL{} - EP : {} | Mean Reward : {}".format("A2C", ep, np.mean(train_reward[-10:])))
+        train_reward.append(ep_reward)
 
 def init_weights(m):
     if type(m) == nn.Linear:
