@@ -20,9 +20,9 @@ env = gym.make(env_name)
 writer = SummaryWriter("runs/"+ env_name + "_" + time.ctime(time.time()))
 
 input_dim = env.observation_space.shape[0]
-hidden_dim = 1024
+hidden_dim = 256
 output_dim = env.action_space.n
-LR = 0.0001
+LR = 1e-3#0.0001
 MAX_EP = 100000
 GAMMA = 0.99
 ppo_steps = 5

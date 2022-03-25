@@ -23,7 +23,8 @@ max_train_steps = 1000000
 PRINT_INTERVAL = update_interval * 10
 hidden_dim = 1024
 
-env_name = 'LunarLander-v2'#'CartPole-v1'
+#env_name = 'LunarLander-v2'
+env_name = 'CartPole-v1'
 writer = SummaryWriter("runs/"+ env_name+"_"+time.ctime(time.time()))
 def test(step_idx, model):
     

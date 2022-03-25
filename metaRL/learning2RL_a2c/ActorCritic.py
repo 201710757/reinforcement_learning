@@ -14,13 +14,13 @@ class ActorCritic(nn.Module):
 
         # Actor
         self.action_layer = nn.Linear(hidden_dim, output_dim)
-        nn.init.orthogonal_(self.action_layer.weight.data, 0.01)
-        self.action_layer.bias.data.fill_(0)
+        #nn.init.orthogonal_(self.action_layer.weight.data, 0.01)
+        #self.action_layer.bias.data.fill_(0)
 
         # Critic
         self.value_layer = nn.Linear(hidden_dim, 1)
-        nn.init.orthogonal_(self.value_layer.weight.data, 1)
-        self.value_layer.bias.data.fill_(0)
+        #nn.init.orthogonal_(self.value_layer.weight.data, 1)
+        #self.value_layer.bias.data.fill_(0)
 
     def forward(self, state, past_in, memory=None):
 
@@ -28,15 +28,17 @@ class ActorCritic(nn.Module):
             memory = self.init_lstm_state()
         #state = self.encoder(state)
         
-        state = torch.cat((state, *past_in), dim=-1).unsqueeze(0)
-        state, memory = self.lstm(state.unsqueeze(0), memory)
+        state = torch.cat((state, *past_in), dim=-1)
+        state, memory = self.lstm(state.unsqueeze(0).unsqueeze(0), memory)
         
+        print("stae : ", state)
+        print("memory : ", memory)
 
-        state_value = self.value_layer(state)
+        value = self.value_layer(state)
         
-        action_value = self.action_layer(state)
+        policy = self.action_layer(state)
 
-        return state_value, action_value, memory
+        return policy, value, memory
     
     def init_lstm_state(self):
         h0 = torch.zeros(1, 1, self.lstm.hidden_size).float().to(device)
