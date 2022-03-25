@@ -93,9 +93,9 @@ def main():
                 soft_update(mu, mu_target)
                 soft_update(q, q_target)
 
-        if ep % 10 == 0 and ep != 0:
-            writer.add_scalar("Model - Average 10 steps", total_score/10, ep)
-            print("{} EP | REWARD : {}".format(ep, total_score/10))
+        if ep % 100 == 0 and ep != 0:
+            writer.add_scalar("Model - Average 100 steps", total_score/100, ep)
+            print("{} EP | REWARD : {}".format(ep, total_score/100))
             total_score = 0
 
 main()
