@@ -31,7 +31,7 @@ input_dim = env.observation_space.n
 hidden_dim = 48
 output_dim = env.action_space.n
 LR = 1e-3
-MAX_EP = 30001
+MAX_EP = 50001
 GAMMA = 0.99
 
 def train():
@@ -135,9 +135,9 @@ def train():
 
         optimizer.step()
 
-        if ep % ENV_RESET_TERM == 0 and ep != 0:
+        if ep % int(ENV_RESET_TERM/10) == 0 and ep != 0:
             print("ep {} - reward {}".format(ep, np.mean(train_reward)))
-            writer.add_scalar(str(ENV_RESET_TERM) +" ep mean reward", np.mean(train_reward), ep)
+            writer.add_scalar(str(ENV_RESET_TERM/10) +" ep mean reward", np.mean(train_reward), ep)
             train_reward = []
 
         train_reward.append(ep_reward)
