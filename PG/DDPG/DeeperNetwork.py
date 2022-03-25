@@ -11,9 +11,9 @@ class Mu(nn.Module):
         self.input_dim = input_dim
         self.output_dim = output_dim
 
-        self.fc1 = nn.Linear(self.input_dim, 1024)
-        # = nn.BatchNorm1d(1024)
-        self.fc2 = nn.Linear(1024, 1024)
+        self.fc1 = nn.Linear(self.input_dim, 512)
+        #self.bn1 = nn.BatchNorm1d(1024)
+        self.fc2 = nn.Linear(512, 64)
         # = nn.BatchNorm1d(1024)
         self.fc3 = nn.Linear(1024, 64)
         # = nn.BatchNorm1d(64)
@@ -23,7 +23,7 @@ class Mu(nn.Module):
         #x = x.unsqueeze(0)
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        x = F.relu(self.fc3(x))
+        #x = F.relu(self.fc3(x))
         m = torch.tanh(self.mu(x))
         
         return m
@@ -38,20 +38,20 @@ class Q(nn.Module):
         self.input_dim = input_dim
         self.output_dim = output_dim
         
-        self.fc_s = nn.Linear(self.input_dim, 1024)
+        self.fc_s = nn.Linear(self.input_dim, 512)
         # = nn.BatchNorm1d(512)
         
-        self.fc_a = nn.Linear(self.output_dim, 256)
+        self.fc_a = nn.Linear(self.output_dim, 512)
         # = nn.BatchNorm1d(256)
         self.fc_a1 = nn.Linear(256,1024)
         # = nn.BatchNorm1d(512)
 
-        self.fc_Q = nn.Linear(2048, 2048)
+        self.fc_Q = nn.Linear(1024, 64)
          #= nn.BatchNorm1d(1024)
         self.fc_Q1 = nn.Linear(2048, 128)
          #= nn.BatchNorm1d(64)
 
-        self.out = nn.Linear(128, 1)
+        self.out = nn.Linear(64, 1)
 
     def forward(self, s, a):
         #s = s.unsqueeze(0)
@@ -59,12 +59,12 @@ class Q(nn.Module):
 
         _s = F.relu(self.fc_s(s))
         _a = F.relu(self.fc_a(a))
-        _a = F.relu(self.fc_a1(_a))
+        #_a = F.relu(self.fc_a1(_a))
 
         sa = torch.cat([_s, _a], dim=1)
 
         Q = F.relu(self.fc_Q(sa))
-        Q = F.relu(self.fc_Q1(Q))
+        #Q = F.relu(self.fc_Q1(Q))
         Q = self.out(Q)
 
         return Q

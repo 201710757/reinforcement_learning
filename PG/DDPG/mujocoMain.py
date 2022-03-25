@@ -22,8 +22,8 @@ GAMMA = 0.99
 tau = 0.001
 MAX_STEPS = 10000000
 batch_size = 128
-UPDATE_SIZE = 2000
-SOFT_UPDATE_TERM = 5
+UPDATE_SIZE = 1000
+SOFT_UPDATE_TERM = 10
 
 def train(mu, mu_target, q, q_target, memory, q_optim, mu_optim):
     s, a, r, sp, d = memory.sample(batch_size)
@@ -63,7 +63,7 @@ def main():
     q_optim = optim.Adam(q.parameters(), lr = LR_Q)
     mu_optim = optim.Adam(mu.parameters(), lr = LR_Mu)
     N = OrnsteinUhlenbeckNoise(mu=np.zeros(output_dim))
-
+    rewards = []
     total_score = 0
     for ep in range(MAX_STEPS):
         s = env.reset()
@@ -86,17 +86,19 @@ def main():
             total_score += r
             
             s = sp
-
+        
+        rewards.append(total_score)
+        total_score = 0
         if memory.size() > UPDATE_SIZE:
             for _ in range(SOFT_UPDATE_TERM):
                 train(mu, mu_target, q, q_target, memory, q_optim, mu_optim)
                 soft_update(mu, mu_target)
                 soft_update(q, q_target)
 
-        if ep % 100 == 0 and ep != 0:
-            writer.add_scalar("Model - Average 100 steps", total_score/100, ep)
-            print("{} EP | REWARD : {}".format(ep, total_score/100))
-            total_score = 0
+        if ep % 10 == 0 and ep != 0:
+            writer.add_scalar("Model - Average 10 steps", np.mean(rewards), ep)
+            print("{} EP | REWARD : {}".format(ep, np.mean(rewards)))
+            rewards = []
 
 main()
 
