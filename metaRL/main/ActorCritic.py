@@ -1,10 +1,10 @@
 import numpy as np
 import torch
 import torch.nn as nn
-import torhc.nn.functional as F
+import torch.nn.functional as F
 from torch.autograd import Variable
 
-def ortho_init(weight, scale=1.):
+def ortho_init(weights, scale=1.):
     shape = tuple(weights.size())
     flat_shape = shape[1], shape[0]
 
@@ -21,11 +21,11 @@ class A2C_LSTM(nn.Module):
         super(A2C_LSTM, self).__init__()
         
         self.actor = nn.Linear(hidden_dim, output_dim)
-        self.actor.weight.data = ortho_init(self.actor.weight_data, 0.01)
+        self.actor.weight.data = ortho_init(self.actor.weight.data, 0.01)
         self.actor.bias.data.fill_(0)
         
-        self.critic = nn.Linear(hidden_dim, 1))
-        self.critic.weight.data = orth_init(self.critic.weight_data, 1.0)
+        self.critic = nn.Linear(hidden_dim, 1)
+        self.critic.weight.data = ortho_init(self.critic.weight.data, 1.0)
         self.critic.bias.data.fill_(0)
         
         self.lstm = nn.LSTM(input_dim, hidden_dim)

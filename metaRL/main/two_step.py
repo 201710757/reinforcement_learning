@@ -9,7 +9,7 @@ S_2 = 2
 N_STATES = 3
 
 class TwoStepTask:
-    def __init__(self, config):
+    def __init__(self):
         # start state
         self.state = S_0
 
@@ -20,11 +20,11 @@ class TwoStepTask:
         self.highest_reward_state = np.random.choice([S_1, S_2])
         
         self.num_actions = 2
-        self.r_prob = config["reward-prob"]
-        self.num_trials = config["trials-per-epi"]
+        self.r_prob = 0.9
+        self.num_trials = 100
         
         # initialization of plotting variables
-        common_prob = config["common-prob"]
+        common_prob = 0.75
         self.transitions = np.array([
             [common_prob, 1-common_prob],
             [1-common_prob, common_prob]
