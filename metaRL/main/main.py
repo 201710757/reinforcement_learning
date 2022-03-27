@@ -12,6 +12,9 @@ from two_step import TwoStepTask
 Rollout = namedtuple('Rollout', ('state', 'action', 'reward', 'timestep', 'done', 'policy', 'value'))
 
 hidden_dim = 48
+MAX_EP = 10000
+GAMMA = 0.9
+TEST_EP = 500
 
 class Trainer:
     def __init__(self):
@@ -115,7 +118,7 @@ class Trainer:
 
         return loss
 
-    def train(self, max_episodes, gamma, save_interval):
+    def train(self, max_episodes, gamma):
         total_rewards = np.zeros(max_episodes)
         
         for ep in range(max_episodes):
@@ -146,8 +149,8 @@ class Trainer:
 
 if __name__ == "__main__":
     trainer = Trainer()
-    trainer.train(10000, 0.9, 10000)
-    trainer.test(500)
+    trainer.train(MAX_EP, GAMMA)
+    trainer.test(TEST_EP)
 
 
 
