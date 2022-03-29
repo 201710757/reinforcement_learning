@@ -10,6 +10,8 @@ class ActorCritic(nn.Module):
         super(ActorCritic, self).__init__()
 
         self.affine = nn.Linear(input_dim, hidden_dim)
+        self.state1 = nn.Linear(hidden_dim, hidden_dim)
+        self.value1 = nn.Linear(hidden_dim, hidden_dim)
 
         # Actor
         self.action_layer = nn.Linear(hidden_dim, output_dim)
@@ -21,9 +23,12 @@ class ActorCritic(nn.Module):
     def forward(self, state):
         state = self.affine(state)
         
-        state_value = self.value_layer(F.relu(state))
+        state1 = self.state1(F.relu(state))
+        state_value = self.value_layer(F.relu(state1))
+
         
-        action_value = self.action_layer(F.relu(state))
+        value = self.value1(F.relu(state))
+        action_value = self.action_layer(F.relu(value))
 
         return state_value, action_value
 

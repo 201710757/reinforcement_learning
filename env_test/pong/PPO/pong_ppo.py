@@ -22,8 +22,8 @@ writer = SummaryWriter("runs/"+ env_name + "_" + time.ctime(time.time()))
 input_dim = 6400 #env.observation_space.shape[0]
 hidden_dim = 1024
 output_dim = env.action_space.n
-LR = 1e-3#0.0001
-MAX_EP = 100#100000
+LR = 1e-4#0.0001
+MAX_EP = 100000
 GAMMA = 0.99
 ppo_steps = 5
 ppo_clip = 0.1
@@ -135,7 +135,7 @@ def train():
         if ep % 10 == 0:
             print("MODEL{} - EP : {} | Mean Reward : {}".format(" PPO", ep, np.mean(train_reward[-10:])))
     
-    torch.save(model.state_dict(), './ppo_pong.pth')
+    torch.save(policy.state_dict(), './ppo_pong_hugeNet.pth')
 
 
 def init_weights(m):
@@ -146,10 +146,11 @@ def init_weights(m):
 
 train()
 
-
 def test():
-    model = torch.load('./ppo_pong.pth')
-    model = model.to(device)
+    model = ActorCritic(input_dim, hidden_dim, output_dim).to(device)
+
+    model.load_state_dict(torch.load('./ppo_pong_hugeNet.pth'))
+    #model = model.to(device)
     model.eval()
 
 
@@ -161,7 +162,8 @@ def test():
     for ep in range(MAX_EP):
         d = False
         s = env.reset()
-
+        
+        ep_reward = 0
         while not d:
             s = prepro(s)
 
@@ -175,9 +177,9 @@ def test():
             s, r, d, _ = env.step(action.item())
             env.render()
             tot_reward += r
-
+            ep_reward += r
+        print("test - ep reward : ", ep_reward)
     print("test - mean reward : ", tot_reward/MAX_EP)
 
 
-            
-        
+test() 
