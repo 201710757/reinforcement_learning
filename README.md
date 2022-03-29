@@ -2,4 +2,4 @@
 
 value based : QTable, QNet, DQN  
 policy based : vanilla PG, REINFORCE, ActorCritic, A2C, A3C, PPO, DDPG  
-metaRL : learning2RL  
+metaRL : learning2RL(A2C LSTM)  
