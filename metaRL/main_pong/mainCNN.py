@@ -8,7 +8,7 @@ from collections import namedtuple
 
 import gym
 from ActorCriticCNN import A2C_LSTM
-from two_step import TwoStepTask
+from ParallelEnv import ParallelEnv
 
 Rollout = namedtuple('Rollout', ('state', 'action', 'reward', 'timestep', 'done', 'policy', 'value'))
 
@@ -21,8 +21,10 @@ class Trainer:
     def __init__(self):
         self.device = torch.device("cuda")
         
-        self.env = gym.make('Pong-v0')# TwoStepTask()
-        # self.agent = A2C_LSTM(self.env.feat_size, hidden_dim, self.env.num_actions).to(self.device)
+        env_name = 'Pong-v0'
+        n_train_processes = 4
+
+        self.env = gym.make('Pong-v0')#envs = ParallelEnv(n_train_processes, env_name)# gym.make('Pong-v0')
         self.agent = A2C_LSTM(self.env.observation_space.shape[0], hidden_dim, self.env.action_space.n).to(self.device)
         self.optim = optim.RMSprop(self.agent.parameters(), lr=7.e-4)
 
@@ -69,7 +71,7 @@ class Trainer:
             action = action_cat.sample()
             action_onehot = np.eye(self.env.action_space.n)[action]
 
-            new_state, reward, done, _ = self.env.step(int(action))
+            new_state, reward, done, _ = self.env.step(action)
             timestep += 1
             buffer += [Rollout(state, action_onehot, reward, timestep, done, action_dist, val_estimate)]
 
