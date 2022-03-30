@@ -15,7 +15,7 @@ Rollout = namedtuple('Rollout', ('state', 'action', 'reward', 'timestep', 'done'
 hidden_dim = 1024
 MAX_EP = 10000
 GAMMA = 0.9
-TEST_EP = 30
+TEST_EP = 10
 
 class Trainer:
     def __init__(self):
