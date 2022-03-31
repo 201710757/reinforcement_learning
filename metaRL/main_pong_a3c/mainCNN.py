@@ -10,6 +10,8 @@ import torch.multiprocessing as mp
 import gym
 from ActorCriticCNN import A2C_LSTM
 from ParallelEnv import ParallelEnv
+import time
+
 
 Rollout = namedtuple('Rollout', ('state', 'action', 'reward', 'timestep', 'done', 'policy', 'value'))
 
@@ -35,7 +37,7 @@ max_grad_norm = 999.
 switch_p = 0.1
 start_episode = 0
 
-writer = SummaryWriter('runs/')
+writer = SummaryWriter('runs/' + env_name + "_" + time.ctime(time.time()))
 # self.save_path = 
 def prepro(I):
     """ prepro 210x160x3 uint8 frame into 6400 (80x80) 1D float vector """
@@ -75,7 +77,7 @@ def train(g_policy, rank):
                     torch.tensor([state], device=device).float(),
                     torch.tensor([p_action], device=device).float(),
                     torch.tensor([[p_reward]], device=device).float(),
-                    torch.tensor([[timestep]], device=device).float(),
+                    #torch.tensor([[timestep]], device=device).float(),
                     mem_state
             ))
 
@@ -99,7 +101,7 @@ def train(g_policy, rank):
                 torch.tensor([state], device=device).float(),
                 torch.tensor([p_action], device=device).float(),
                 torch.tensor([[p_reward]], device=device).float(),
-                torch.tensor([[timestep]], device=device).float(),
+                #torch.tensor([[timestep]], device=device).float(),
                 mem_state
         ))
         
@@ -166,6 +168,7 @@ def train(g_policy, rank):
 
         total_rewards[ep] = total_reward
         if rank == 1:
+            writer.add_scalar("Avg 10 ep", total_rewards[max(0, ep-10):ep+1].mean(), ep)
             print("Ep : {} | Reward : {} | Mean Reward : {}".format(ep, total_reward, total_rewards[max(0, ep-10):ep+1].mean()))
 
 

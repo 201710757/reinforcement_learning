@@ -40,7 +40,7 @@ class A2C_LSTM(nn.Module):
             nn.Linear(1024, hidden_dim),
             nn.ReLU()
         )
-        self.lstm = nn.LSTM(hidden_dim + 8, hidden_dim)
+        self.lstm = nn.LSTM(hidden_dim + 8-1, hidden_dim)
 
 
         self.h0 = nn.Parameter(torch.randn(1,1, self.lstm.hidden_size).float())
@@ -49,7 +49,7 @@ class A2C_LSTM(nn.Module):
     def forward(self, x):
         s, p_action, p_reward, t, mem_state = x
         s = self.encoder(s)
-        p_input = torch.cat((s, p_action, p_reward, t), dim=-1)
+        p_input = torch.cat((s, p_action, p_reward), dim=-1)
 
         if mem_state is None:
             mem_state = (self.h0, self.c0)
