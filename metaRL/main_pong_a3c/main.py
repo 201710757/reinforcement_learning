@@ -7,25 +7,24 @@ from torch.distributions import Categorical
 from collections import namedtuple
 
 import gym
-from ActorCriticCNN import A2C_LSTM
-from ParallelEnv import ParallelEnv
+from ActorCritic import A2C_LSTM
+from two_step import TwoStepTask
 
 Rollout = namedtuple('Rollout', ('state', 'action', 'reward', 'timestep', 'done', 'policy', 'value'))
 
-hidden_dim = 256
-MAX_EP = 1000000
+hidden_dim = 1024
+MAX_EP = 10000
 GAMMA = 0.9
 TEST_EP = 10
+
 class Trainer:
     def __init__(self):
         self.device = torch.device("cuda")
         
-        env_name = 'Pong-v0'
-        n_train_processes = 4
-
-        self.env = gym.make('Pong-v0')#envs = ParallelEnv(n_train_processes, env_name)# gym.make('Pong-v0')
-        self.agent = A2C_LSTM(self.env.observation_space.shape[0], hidden_dim, self.env.action_space.n).to(self.device)
-        self.optim = optim.RMSprop(self.agent.parameters(), lr=1.e-4)
+        self.env = gym.make('Pong-v0')# TwoStepTask()
+        # self.agent = A2C_LSTM(self.env.feat_size, hidden_dim, self.env.num_actions).to(self.device)
+        self.agent = A2C_LSTM(6400+8, hidden_dim, self.env.action_space.n).to(self.device)
+        self.optim = optim.RMSprop(self.agent.parameters(), lr=7.e-4)
 
         self.val_coeff = 0.05
         self.entropy_coeff = 0.05
@@ -42,7 +41,7 @@ class Trainer:
         I[I == 144] = 0 # erase background (background type 1)
         I[I == 109] = 0 # erase background (background type 2)
         I[I != 0] = 1 # everything else (paddles, ball) just set to 1
-        return I.astype(np.float).reshape(1,80,80)
+        return I.astype(np.float).ravel()
 
     def run_episode(self, episode):
         done = False
@@ -50,7 +49,6 @@ class Trainer:
         p_action, p_reward, timestep = [0]*self.env.action_space.n, 0, 0
 
         state = self.env.reset()
-        
         mem_state = self.agent.get_init_states()
 
         buffer = []
@@ -71,7 +69,7 @@ class Trainer:
             action = action_cat.sample()
             action_onehot = np.eye(self.env.action_space.n)[action]
 
-            new_state, reward, done, _ = self.env.step(action)
+            new_state, reward, done, _ = self.env.step(int(action))
             timestep += 1
             buffer += [Rollout(state, action_onehot, reward, timestep, done, action_dist, val_estimate)]
 
@@ -151,14 +149,24 @@ class Trainer:
 
             print("Ep : {} | Reward : {} | Mean Reward : {}".format(ep, reward, total_rewards[max(0, ep-10):ep+1].mean()))
 
+    def _test(self, num_ep):
+        self.env.reset_transition_count()
+        self.agent.eval()
+        total_rewards = np.zeros(num_ep)
+
+        for ep in range(num_ep):
+            reward, _ = self.run_episode(ep)
+            total_rewards[ep] = reward
+            print("Ep : {} | Reward : {} | Mean Reward : {}".format(ep, reward, total_rewards[max(0, ep-10):ep+1].mean()))
+        self.env.plot('plots/res')
 
     def test(self, num_ep):
         self.agent.eval()
-        total_rewards = []
+        
         for ep in range(num_ep):
             reward, _ = self.run_episode(ep)
-            total_rewards.append(reward)
-            print("EP : {}/{} | Reward : {} | Mean Reward : {}".format(ep, MAX_EP, reward, total_reward[max(0, ep-10):ep+1].mean()))
+            total_rewards[ep] = reward
+            print("EP : {} | Reward : {} | Mean Reward : {}".format(ep, reward, total_reward[max(0, ep-10):ep+1].mean()))
 
 if __name__ == "__main__":
     trainer = Trainer()
