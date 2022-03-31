@@ -9,7 +9,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import gym
-from ActorCritic import ActorCritic
+from ActorCriticCNN import ActorCritic
 import torch.multiprocessing as mp
 
 device = torch.device("cuda:0")
@@ -20,7 +20,7 @@ env = gym.make(env_name)
 writer = SummaryWriter("runs/"+ env_name + "_" + time.ctime(time.time()))
 
 input_dim = 6400 #env.observation_space.shape[0]
-hidden_dim = 1024
+hidden_dim = 512
 output_dim = env.action_space.n
 LR = 1e-4#0.0001
 MAX_EP = 100000
@@ -36,7 +36,7 @@ def prepro(I):
   I[I == 144] = 0 # erase background (background type 1)
   I[I == 109] = 0 # erase background (background type 2)
   I[I != 0] = 1 # everything else (paddles, ball) just set to 1
-  return I.astype(np.float).ravel()
+  return I.astype(np.float).reshape(1,80,80)
 
 def train():
     policy = ActorCritic(input_dim, hidden_dim, output_dim).to(device)
@@ -75,7 +75,7 @@ def train():
 
             ep_reward += r
 
-        states = torch.cat(states).unsqueeze(0).to(device)
+        states = torch.cat(states).to(device)
         actions = torch.cat(actions).unsqueeze(0).to(device)
         log_prob_actions = torch.cat(log_prob_actions).to(device)
         values = torch.cat(values).squeeze(-1).to(device)
@@ -120,7 +120,7 @@ def train():
             policy_loss_2 = torch.clamp(policy_ratio, min=1.0-ppo_clip, max=1.0+ppo_clip) * advantages
 
             policy_loss = -torch.min(policy_loss_1, policy_loss_2).mean()
-            value_loss = F.smooth_l1_loss(returns.unsqueeze(0), s_p).mean()
+            value_loss = F.smooth_l1_loss(returns.unsqueeze(0), s_p.unsqueeze(0)).mean()
             
             loss = policy_loss + value_loss
             optimizer.zero_grad()
