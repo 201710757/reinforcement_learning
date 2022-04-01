@@ -57,7 +57,7 @@ def train(g_policy, rank):
 
     local_optimizer = optim.Adam(g_policy.parameters(), lr = LR)
 
-
+    mem_state = local_policy.get_init_states()
     for ep in range(MAX_EP):
         done = False
         total_reward = 0
@@ -65,11 +65,12 @@ def train(g_policy, rank):
 
         state = env.reset()
         
-        mem_state = local_policy.get_init_states()
+        # mem_state = local_policy.get_init_states()
 
         buffer = []
         
         while not done:
+            mem_state = (mem_state[0].detach(), mem_state[1].detach())
             # env.possible_switch(switch_p=self.switch_p)
             state = prepro(state)
 
@@ -97,6 +98,7 @@ def train(g_policy, rank):
             total_reward += reward
 
         state = prepro(state)
+        mem_state = (mem_state[0].detach(), mem_state[1].detach())
         _, val_estimate, _ = local_policy((
                 torch.tensor([state], device=device).float(),
                 torch.tensor([p_action], device=device).float(),
