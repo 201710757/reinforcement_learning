@@ -22,8 +22,8 @@ writer = SummaryWriter("runs/"+ env_name)
 input_dim = env.observation_space.shape[0]
 hidden_dim = 1024
 output_dim = env.action_space.n
-LR = 1e-3
-MAX_EP = 5000
+LR = 1e-5
+MAX_EP = 500000
 GAMMA = 0.99
 
 # 4 : memory error
@@ -108,8 +108,8 @@ def train(g_policy, model_num):
             writer.add_scalar("value loss", value_loss, ep)
 
 
-        if ep % 100 == 0:
-            print("MODEL{} - EP : {} | Mean Reward : {}".format(model_num, ep, np.mean(train_reward[-100:])))
+        if ep % 10 == 0:
+            print("MODEL{} - EP : {} | Mean Reward : {}".format(model_num, ep, np.mean(train_reward[-10:])))
 
 def init_weights(m):
         if type(m) == nn.Linear:
