@@ -68,6 +68,7 @@ class ParallelEnv:
                 ob, reward, done, info = env.step(data)
                 if done:
                     ob = env.reset()
+                #ob = self.prepro(ob)
                 worker_end.send((ob, reward, done, info))
             elif cmd == 'reset':
                 ob = env.reset()
@@ -82,5 +83,14 @@ class ParallelEnv:
                 worker_end.send((env.observation_space, env.action_space))
             else:
                 raise NotImplementedError
+
+    def prepro(I):
+        I = I[35:195]
+        I = I[::2, ::2, 0]
+        I[I==144]=0
+        I[I==109]=0
+        I[I!=0]=1
+        return I.astype(np.float).reshape(1,80,80)
+
 
 

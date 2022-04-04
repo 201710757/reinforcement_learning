@@ -21,18 +21,22 @@ class ActorCritic(nn.Module):
 
 
         # Actor
+        self.action = nn.Linear(hidden_dim, hidden_dim)
         self.action_layer = nn.Linear(hidden_dim, output_dim)
 
         # Critic
+        self.value = nn.Linear(hidden_dim, hidden_dim)
         self.value_layer = nn.Linear(hidden_dim, 1)
 
 
     def forward(self, state):
         state = self.encoder(state)
         
-        state_value = self.value_layer(F.relu(state)) # Critic
+        statev = self.value(F.relu(state))
+        state_value = self.value_layer(F.relu(statev)) # Critic
 
-        action_value = self.action_layer(F.relu(state)) # Actor
+        actionv = self.action(F.relu(state))
+        action_value = self.action_layer(F.relu(actionv)) # Actor
 
         return state_value, action_value
 
