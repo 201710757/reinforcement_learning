@@ -131,11 +131,13 @@ def train():
         
         if ep % 10 == 0: #and model_num == 0:
             writer.add_scalar("Model - Average 10 steps", np.mean(train_reward[-10:]), ep)
-
+            writer.add_scalar("policy loss", policy_loss, ep)
+            writer.add_scalar("value loss", value_loss, ep)
         if ep % 10 == 0:
             print("MODEL{} - EP : {} | Mean Reward : {}".format(" PPO", ep, np.mean(train_reward[-10:])))
     
-    torch.save(policy.state_dict(), './ppo_pong_hugeNet.pth')
+        if ep % 1000 == 0 and ep != 0:
+            torch.save(policy.state_dict(), './ppo_pong_hugeNet_' + str(ep) + '.pth')
 
 
 def init_weights(m):
@@ -149,6 +151,7 @@ train()
 def test():
     model = ActorCritic(input_dim, hidden_dim, output_dim).to(device)
 
+    
     model.load_state_dict(torch.load('./ppo_pong_hugeNet.pth'))
     #model = model.to(device)
     model.eval()
