@@ -84,7 +84,7 @@ def train(g_policy, model_num):
         returns = []
         value_loss = 0
         action_loss = 0
-        gae_lambda = 1.
+        gae_lambda = 0.99
         R = 0
         gae = torch.zeros(1,1).to(device)
         for i in reversed(range(len(rewards)-1)):
@@ -133,7 +133,7 @@ def train(g_policy, model_num):
 
 
         if ep % 10 == 0:
-            print("MODEL{} - EP : {} | Mean Reward : {}".format(model_num, ep, np.mean(train_reward[-10:])))
+            print("MODEL{} - EP : {} | Mean Reward : {} | Last Game Reward : {}".format(model_num, ep, np.mean(train_reward[-10:]), ep_reward))
 
 def init_weights(m):
         if type(m) == nn.Linear:
