@@ -14,16 +14,16 @@ import torch.multiprocessing as mp
 
 device = torch.device("cuda:0")
 # env_name = 'CartPole-v1'
-env_name = 'Pong-v0'
+env_name = 'PongNoFrameskip-v4' #'Pong-v0'
 env = gym.make(env_name)
 
 writer = SummaryWriter("runs/"+ env_name)
 
 input_dim = env.observation_space.shape[0]
-hidden_dim = 1024
+hidden_dim = 256
 output_dim = env.action_space.n
-LR = 1e-5
-MAX_EP = 500000
+LR = 1e-4
+MAX_EP = 1500000
 GAMMA = 0.99
 
 # 4 : memory error
