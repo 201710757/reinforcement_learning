@@ -9,22 +9,22 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import gym
-from ActorCriticCNN import ActorCritic
+from ActorCritic import ActorCritic
 import torch.multiprocessing as mp
 
 device = torch.device("cuda:0")
 #env_name = 'LunarLander-v2'
-env_name = 'Pong-v0'
+env_name = 'PongDeterministic-v4'#'PongNoFrameskip-v4'#'Pong-v0'
 env = gym.make(env_name)
 
 writer = SummaryWriter("runs/"+ env_name + "_" + time.ctime(time.time()))
 
 input_dim = 6400 #env.observation_space.shape[0]
-hidden_dim = 512
+hidden_dim = 1024
 output_dim = env.action_space.n
 LR = 1e-4#0.0001
-MAX_EP = 100000
-GAMMA = 0.99
+MAX_EP = 1000000
+GAMMA = 0.95
 ppo_steps = 5
 ppo_clip = 0.1
 lmbda = 0.98
@@ -36,7 +36,7 @@ def prepro(I):
   I[I == 144] = 0 # erase background (background type 1)
   I[I == 109] = 0 # erase background (background type 2)
   I[I != 0] = 1 # everything else (paddles, ball) just set to 1
-  return I.astype(np.float).reshape(1,80,80)
+  return I.astype(np.float).ravel()
 
 def train():
     policy = ActorCritic(input_dim, hidden_dim, output_dim).to(device)
@@ -133,7 +133,6 @@ def train():
             writer.add_scalar("Model - Average 10 steps", np.mean(train_reward[-10:]), ep)
             writer.add_scalar("policy loss", policy_loss, ep)
             writer.add_scalar("value loss", value_loss, ep)
-        if ep % 10 == 0:
             print("MODEL{} - EP : {} | Mean Reward : {}".format(" PPO", ep, np.mean(train_reward[-10:])))
     
         if ep % 1000 == 0 and ep != 0:
