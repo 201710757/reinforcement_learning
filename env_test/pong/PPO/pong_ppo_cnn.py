@@ -22,10 +22,10 @@ writer = SummaryWriter("runs/"+ env_name + "_" + time.ctime(time.time()))
 input_dim = 6400 #env.observation_space.shape[0]
 hidden_dim = 1024
 output_dim = env.action_space.n
-LR = 1e-4#0.0001
+LR = 1e-5#0.0001
 MAX_EP = 1000000
 GAMMA = 0.95
-ppo_steps = 5
+ppo_steps = 25
 ppo_clip = 0.1
 lmbda = 0.98
 
