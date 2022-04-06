@@ -11,8 +11,11 @@ class ActorCritic(nn.Module):
 
         self.encoder = nn.Sequential(
             nn.Conv2d(1, 32, kernel_size=(8,8), stride=(4,4)),
+            nn.ReLU(),
             nn.Conv2d(32, 64, kernel_size=(4,4), stride=(3,3)),
+            nn.ReLU(),
             nn.Conv2d(64, 64, kernel_size=(3,3), stride=(1,1)),
+            nn.ReLU(),
             nn.Flatten(),
             nn.Linear(1024, hidden_dim)
             #nn.ReLU()

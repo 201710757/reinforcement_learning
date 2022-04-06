@@ -9,7 +9,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import gym
-from ActorCriticCNN import ActorCritic
+from ActorCritic import ActorCritic
 import torch.multiprocessing as mp
 
 import time
@@ -21,7 +21,7 @@ env = gym.make(env_name)
 
 writer = SummaryWriter("runs/"+ env_name + "_" + time.ctime(time.time()))
 
-input_dim = env.observation_space.shape[0]
+input_dim = 6400#env.observation_space.shape[0]
 hidden_dim = 256
 output_dim = env.action_space.n
 LR = 1e-5
@@ -29,7 +29,7 @@ MAX_EP = 1500000
 GAMMA = 0.99
 
 # 4 : memory error
-process_num = 2
+process_num = 3
 
 def prepro(I):
     I = I[35:195]
@@ -37,7 +37,7 @@ def prepro(I):
     I[I==144]=0
     I[I==109]=0
     I[I!=0]=1
-    return I.astype(np.float).reshape(1,80,80)
+    return I.astype(np.float).reshape(6400)
 
 def train(g_policy, model_num):
     env = gym.make(env_name)
