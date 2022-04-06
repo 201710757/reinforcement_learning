@@ -1,5 +1,6 @@
 C_MDP.py
 *.DS_Store
+*.pth
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

@@ -37,7 +37,7 @@ def prepro(I):
     I[I==144]=0
     I[I==109]=0
     I[I!=0]=1
-    return I.astype(np.float).reshape(6400)
+    return I.astype(np.float).ravel()
 
 def train(g_policy, model_num):
     env = gym.make(env_name)

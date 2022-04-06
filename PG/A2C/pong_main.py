@@ -24,7 +24,7 @@ PRINT_INTERVAL = update_interval * 10
 hidden_dim = 1024
 
 #env_name = 'LunarLander-v2'
-env_name = 'Pong-v0'#CartPole-v1
+env_name = 'Pong-v4'#CartPole-v1
 writer = SummaryWriter("runs/"+ env_name+"_"+time.ctime(time.time()))
 def test(step_idx, model):
     
@@ -41,7 +41,7 @@ def test(step_idx, model):
             prob = model.actor(torch.FloatTensor([s]).to(device), softmax_dim=0)
             a = Categorical(prob).sample().cpu().numpy()
             sp ,r, d, _ = env.step(a)
-
+            #env.render()
             s = sp
             score += r
         d = False
