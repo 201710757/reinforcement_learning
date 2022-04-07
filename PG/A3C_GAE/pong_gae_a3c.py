@@ -9,22 +9,22 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import gym
-from ActorCriticCNN import ActorCritic
+from ActorCritic import ActorCritic
 import torch.multiprocessing as mp
 
 import time
 
 device = torch.device("cuda:0")
 #env_name = 'CartPole-v1'
-env_name = 'PongNoFrameskip-v4' #'Pong-v0'
+env_name = 'PongDeterministic-v4' #'Pong-v0'
 env = gym.make(env_name)
 
 writer = SummaryWriter("runs/"+ env_name + "_" + time.ctime(time.time()))
 
-input_dim = env.observation_space.shape[0]
+input_dim = 6400#env.observation_space.shape[0]
 hidden_dim = 256
 output_dim = env.action_space.n
-LR = 1e-5
+LR = 1e-4
 MAX_EP = 1500000
 GAMMA = 0.99
 
@@ -37,7 +37,7 @@ def prepro(I):
     I[I==144]=0
     I[I==109]=0
     I[I!=0]=1
-    return I.astype(np.float).reshape(1,80,80)
+    return I.astype(np.float).ravel()#.reshape(1,80,80)
 
 def train(g_policy, model_num):
     env = gym.make(env_name)
@@ -60,7 +60,7 @@ def train(g_policy, model_num):
         
         s = env.reset()
         while not d:
-            #s = prepro(s)
+            s = prepro(s)
             s = torch.FloatTensor(s).to(device).unsqueeze(0)
             state_pred, action_pred = local_policy(s)
 
