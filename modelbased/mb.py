@@ -11,7 +11,7 @@
 import numpy as np
 import _pickle as pickle
 import tensorflow as tf
-get_ipython().run_line_magic('matplotlib', 'inline')
+#get_ipython().run_line_magic('matplotlib', 'inline')
 import matplotlib.pyplot as plt
 import math
 
