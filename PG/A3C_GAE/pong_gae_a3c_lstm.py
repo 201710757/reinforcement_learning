@@ -9,7 +9,7 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import gym
-from ActorCritic import ActorCritic
+from ActorCriticLSTM import ActorCritic
 import torch.multiprocessing as mp
 
 import time
@@ -59,10 +59,11 @@ def train(g_policy, model_num):
         d = False
         
         s = env.reset()
+        mem_state = local_policy.get_init_states()
         while not d:
             s = prepro(s)
             s = torch.FloatTensor(s).to(device).unsqueeze(0)
-            state_pred, action_pred = local_policy(s)
+            state_pred, action_pred, mem_state = local_policy((s, mem_state))
 
             action_prob = F.softmax(action_pred, dim=-1)
             log_prob = F.log_softmax(action_pred, dim=-1)
@@ -129,20 +130,9 @@ def train(g_policy, model_num):
         train_reward.append(ep_reward)
         
         if ep % 10 == 0 and model_num == 0:
-            writer.add_scalar("Model0 - Average 10 steps", np.mean(train_reward[-10:]), ep)
-            
-            writer.add_scalar("action loss", action_loss, ep)
-            writer.add_scalar("value loss"
-        if ep % 10 == 0 and model_num == 1:
-            writer.add_scalar("Model1 - Average 10 steps", np.mean(train_reward[-10:]), ep)
-            
-            writer.add_scalar("action loss", action_loss, ep)
-            writer.add_scalar("value loss"
-        if ep % 10 == 0 and model_num == 2:
-            writer.add_scalar("Model2 - Average 10 steps", np.mean(train_reward[-10:]), ep)
-            
-            writer.add_scalar("action loss", action_loss, ep)
-            writer.add_scalar("value loss", value_loss, ep)
+            writer.add_scalar("Model - Average 10 steps", np.mean(train_reward[-10:]), ep)
+            #writer.add_scalar("action loss", action_loss, ep)
+            #writer.add_scalar("value loss", value_loss, ep)
 
 
         if ep % 10 == 0:
