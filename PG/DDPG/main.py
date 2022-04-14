@@ -77,7 +77,7 @@ def main():
             a = a.item() + noise
             #print(a)
             sp, r, d, _ = env.step([a])
-            memory.put((s, a, (r+8)/8, sp, d))
+            memory.put((s, [a], (r+8)/8, sp, d))
             
             total_score += r
             
