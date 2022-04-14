@@ -27,12 +27,12 @@ def pick_action(state):
 
 
 r_list = []
-episodes = 100000
+episodes = 10000
 success=0
 for ep in range(episodes):
     obs = env.reset()
     exploration_rate = min_exploration_rate + (max_exploration_rate - min_exploration_rate) * np.exp(-exploration_decay_rate*ep)
-
+    success = 0
     while True:
         # env.render()
         exploration = random.uniform(0, 1)
@@ -49,7 +49,7 @@ for ep in range(episodes):
         success += reward
         if done:
             break
-    if ep % 10000 == 0:
+    if ep % 100 == 0:
         print("middle score : {}%".format((success / (ep+1))*100))
     # env.render()
     
