@@ -15,7 +15,7 @@ from ParallelEnvCNN import ParallelEnv
 
 device = torch.device("cuda")
 
-n_train_processes = 3
+n_train_processes = 20
 learning_rate = 0.0002
 update_interval = 10
 gamma = 0.98
@@ -24,7 +24,7 @@ PRINT_INTERVAL = update_interval * 10
 hidden_dim = 1024
 
 #env_name = 'LunarLander-v2'
-env_name = 'Pong-v4'#CartPole-v1
+env_name = 'PongDeterministic-v4'#CartPole-v1
 writer = SummaryWriter("runs/"+ env_name+"_"+time.ctime(time.time()))
 def test(step_idx, model):
     

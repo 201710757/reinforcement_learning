@@ -10,7 +10,7 @@ class ParallelEnv:
         self.waiting = False
         self.closed = False
         self.workers = list()
-
+        mp.set_start_method('spawn')
         master_ends, worker_ends = zip(*[mp.Pipe() for _ in range(self.nenvs)])
         self.master_ends, self.worker_ends = master_ends, worker_ends
         
@@ -19,6 +19,7 @@ class ParallelEnv:
             p.daemon = True
             p.start()
             self.workers.append(p)
+            print("Worker ", worker_id, " connected!")
         
         for worker_end in worker_ends:
             worker_end.close()

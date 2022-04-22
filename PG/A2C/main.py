@@ -15,13 +15,13 @@ from ParallelEnv import ParallelEnv
 
 device = torch.device("cuda")
 
-n_train_processes = 3
+n_train_processes = 20
 learning_rate = 0.0002
-update_interval = 10
+update_interval = 100
 gamma = 0.98
 max_train_steps = 1000000
 PRINT_INTERVAL = update_interval * 10
-hidden_dim = 1024
+hidden_dim = 128#1024
 
 #env_name = 'LunarLander-v2'
 env_name = 'CartPole-v1'
@@ -77,7 +77,6 @@ if __name__ == '__main__':
             prob = model.actor(torch.FloatTensor(s).to(device))
             a = Categorical(prob).sample().cpu().numpy()
             s_p, r, d, info = envs.step(a)
-
             s_lst.append(s)
             a_lst.append(a)
             r_lst.append(r)
