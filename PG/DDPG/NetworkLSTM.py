@@ -4,6 +4,7 @@ import torch.nn.functional as F
 
 device = torch.device("cuda:0")
 
+# LSTM Network Soon
 class Mu(nn.Module):
     def __init__(self, input_dim, output_dim):
         super(Mu, self).__init__()
