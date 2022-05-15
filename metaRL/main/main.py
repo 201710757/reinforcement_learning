@@ -61,7 +61,7 @@ class Trainer:
             new_state, reward, done, timestep = self.env.step(int(action))
 
             buffer += [Rollout(state, action_onehot, reward, timestep, done, action_dist, val_estimate)]
-
+            print("F : ", action_dist)
             state = new_state
             p_reward = reward
             p_action = action_onehot
@@ -108,7 +108,9 @@ class Trainer:
         policy = torch.cat(batch.policy[:-1], dim=1).squeeze().to(self.device)
         action = torch.tensor(batch.action[:-1], device=self.device)
         values = torch.tensor(batch.value[:-1], device=self.device)
-
+        print("po : ", policy)
+        print("ac : ", action)
+        print("va : ", values)
         logits = (policy * action).sum(1)
         policy_loss = -(torch.log(logits) * all_advantages).mean()
         value_loss = 0.5 * (all_returns - values).pow(2).mean()
