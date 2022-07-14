@@ -19,10 +19,10 @@ env = gym.make(env_name)
 
 writer = SummaryWriter("runs/"+ env_name + "_" + time.ctime(time.time()))
 
-input_dim = env.observation_space.shape[0]
-hidden_dim = 256
+input_dim = env.observation_space.shape[0] - 1
+hidden_dim = 512
 output_dim = env.action_space.n
-LR = 1e-3#0.0001
+LR = 1e-4#0.0001
 MAX_EP = 100000
 GAMMA = 0.99
 ppo_steps = 5
@@ -49,7 +49,10 @@ def train():
         
         s = env.reset()
         while not d:
+            s = np.delete(s, 1)
+            #s = np.delete(s, 2)
             s = torch.FloatTensor(s).to(device).unsqueeze(0)
+
             states.append(s)
 
             state_pred, action_pred = policy(s)
