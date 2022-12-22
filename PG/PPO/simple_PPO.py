@@ -12,7 +12,7 @@ import gym
 from ActorCritic import ActorCritic
 import torch.multiprocessing as mp
 
-device = torch.device("cuda:0")
+device = torch.device("cuda:1")
 #env_name = 'LunarLander-v2'
 env_name = 'CartPole-v1'
 env = gym.make(env_name)
@@ -83,15 +83,17 @@ def train():
         advantages = []
         advantage = 0
         next_value = 0
+        td_err_arr = []
         for r, v in zip(reversed(rewards), reversed(values)):
             td_err = r + GAMMA * next_value - v
+            td_err_arr.append(td_err.detach().cpu())
             advantage = td_err + advantage * GAMMA * lmbda
             next_value = v
             advantages.insert(0, advantage)
         advantages = torch.tensor(advantages).float().to(device)
         advantages = (advantages - advantages.mean()) / advantages.std()
         
-
+        
         states = states.detach()
         actions = actions.detach()
         log_prob_actions = log_prob_actions.detach()
@@ -117,6 +119,15 @@ def train():
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+        
+
+        if ep % 10 == 0:
+            #print(td_err_arr)
+            writer.add_scalar("TD Err", np.mean(td_err_arr), ep)
+            writer.add_scalar("advantages", advantages.mean(), ep)
+            writer.add_scalar("policy loss", policy_loss.mean(), ep)
+            writer.add_scalar("value loss", value_loss.mean(), ep)
+            writer.add_scalar("Loss", loss.mean(), ep)
 
         train_reward.append(ep_reward)
         
