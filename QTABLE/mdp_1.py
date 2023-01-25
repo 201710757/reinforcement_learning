@@ -92,3 +92,42 @@ solver.train()
 
 
 
+
+
+
+
+
+def first_visit_mc_prediction(policy, env, n_episodes):
+
+    # First, we initialize the empty value table as a dictionary for storing the values of each state
+    value_table = defaultdict(float)
+
+    N = defaultdict(int)
+
+
+    for _ in range(n_episodes):
+
+        # Next, we generate the epsiode and store the states and rewards
+        states, _, rewards = generate_episode(policy, env)
+        returns = 0
+
+        # Then for each step, we store the rewards to a variable R and states to S, and we calculate
+        # returns as a sum of rewards
+
+        for t in range(len(states) - 1, -1, -1):
+            R = rewards[t]
+            S = states[t]
+
+            # MC 에서의 R 누적 합
+            returns += R
+
+            # Now to perform first visit MC, we check if the episode is visited for the first time, if yes,
+            # we simply take the average of returns and assign the value of the state as an average of returns
+            
+            # 현재 ep기준, 방문 안했을 경우만 가지고 value func 업데이트.
+            if S not in states[:t]:
+                N[S] += 1
+                # N[S] : 여러 에피소드를 진행하기 때문에, 각 에피소드에 대한 평균을 적용.
+                value_table[S] += (returns - value_table[S]) / N[S] 
+
+    return value_table
