@@ -10,6 +10,7 @@ class ActorCritic(nn.Module):
         super(ActorCritic, self).__init__()
 
         self.memory = nn.LSTM(input_dim, hidden_dim)
+        self.affine = nn.Linear(hidden_dim, hidden_dim)
         
         # Actor
         self.action_layer = nn.Linear(hidden_dim, output_dim)
@@ -26,6 +27,10 @@ class ActorCritic(nn.Module):
 
         state, mem_state = self.memory(state.unsqueeze(1), mem_state)
         state = F.relu(state)
+        state = self.affine(state)
+        state = F.relu(state)
+
+
         state_value = self.value_layer(state)
 
         action_value = self.action_layer(state)

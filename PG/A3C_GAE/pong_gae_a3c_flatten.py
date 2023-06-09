@@ -24,12 +24,12 @@ writer = SummaryWriter("runs/"+ env_name + "_" + time.ctime(time.time()))
 input_dim = 6400#env.observation_space.shape[0]
 hidden_dim = 256
 output_dim = env.action_space.n
-LR = 1e-5
+LR = 1e-4
 MAX_EP = 1500000
 GAMMA = 0.99
 
 # 4 : memory error
-process_num = 3
+process_num = 6
 
 def prepro(I):
     I = I[35:195]

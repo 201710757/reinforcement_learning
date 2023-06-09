@@ -14,7 +14,7 @@ import torch.multiprocessing as mp
 
 import time
 
-device = torch.device("cuda:0")
+device = torch.device("cuda:1")
 #env_name = 'CartPole-v1'
 env_name = 'PongDeterministic-v4' #'Pong-v0'
 env = gym.make(env_name)
@@ -29,7 +29,7 @@ MAX_EP = 1500000
 GAMMA = 0.99
 
 # 4 : memory error
-process_num = 3
+process_num = 5
 
 def prepro(I):
     I = I[35:195]
